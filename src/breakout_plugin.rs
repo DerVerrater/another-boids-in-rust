@@ -1,5 +1,9 @@
-
-use bevy::{input::keyboard::Key, math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume}, prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{
+    input::keyboard::Key,
+    math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
+    prelude::*,
+    sprite::MaterialMesh2dBundle,
+};
 
 // Using the default 2D camera they correspond 1:1 with screen pixels.
 const PADDLE_SIZE: Vec2 = Vec2::new(120.0, 20.0);
@@ -41,7 +45,6 @@ const WALL_COLOR: Color = Color::srgb(0.8, 0.8, 0.8);
 const TEXT_COLOR: Color = Color::srgb(0.5, 0.5, 1.0);
 const SCORE_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 
-
 #[derive(Component)]
 struct Paddle;
 
@@ -67,7 +70,7 @@ struct Score(usize);
 struct ScoreboardUi;
 
 #[derive(Bundle)]
-struct WallBundle{
+struct WallBundle {
     sprite_bundle: SpriteBundle,
     collider: Collider,
 }
@@ -91,7 +94,12 @@ impl WallBundle {
         }
     }
 }
-enum WallLocation { Right, Top, Left, Bottom }
+enum WallLocation {
+    Right,
+    Top,
+    Left,
+    Bottom,
+}
 
 impl WallLocation {
     fn position(&self) -> Vec2 {
@@ -111,7 +119,7 @@ impl WallLocation {
         match self {
             WallLocation::Left | WallLocation::Right => {
                 Vec2::new(WALL_THICKNESS, arena_height + WALL_THICKNESS)
-            },
+            }
             WallLocation::Top | WallLocation::Bottom => {
                 Vec2::new(WALL_THICKNESS + arena_width, WALL_THICKNESS)
             }
@@ -119,7 +127,12 @@ impl WallLocation {
     }
 }
 
-enum Collision { Right, Top, Left, Bottom }
+enum Collision {
+    Right,
+    Top,
+    Left,
+    Bottom,
+}
 
 fn ball_collision(ball: BoundingCircle, bounding_box: Aabb2d) -> Option<Collision> {
     if !ball.intersects(&bounding_box) {
@@ -150,14 +163,8 @@ impl Plugin for BreakoutPlugin {
             .insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_event::<CollisionEvent>()
             .add_systems(Startup, setup)
-            .add_systems(FixedUpdate, (
-                apply_velocity,
-                move_paddle,
-            ).chain())
-            .add_systems(FixedUpdate, (
-                check_for_collisions,
-                update_scoreboard
-            ));
+            .add_systems(FixedUpdate, (apply_velocity, move_paddle).chain())
+            .add_systems(FixedUpdate, (check_for_collisions, update_scoreboard));
     }
 }
 
@@ -167,7 +174,7 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn(Camera2dBundle::default());
-    
+
     // paddle
     let paddle_y = BOTTOM_WALL + GAP_BETWEEN_PADDLE_AND_FLOOR;
     commands.spawn((
@@ -223,7 +230,7 @@ fn setup(
             top: SCOREBOARD_TEXT_PADDING,
             left: SCOREBOARD_TEXT_PADDING,
             ..default()
-        })
+        }),
     ));
 
     // walls
@@ -257,7 +264,7 @@ fn setup(
 
     for row in 0..n_rows {
         for column in 0..n_columns {
-            let brick_position = Vec2::new (
+            let brick_position = Vec2::new(
                 offset_x + column as f32 * (BRICK_SIZE.x + GAP_BETWEEN_BRICKS),
                 offset_y + row as f32 * (BRICK_SIZE.y + GAP_BETWEEN_BRICKS),
             );
@@ -306,7 +313,8 @@ fn move_paddle(
         direction += 1.0;
     }
 
-    let new_paddle_position = paddle_transform.translation.x + direction * PADDLE_SPEED * time.delta_seconds();
+    let new_paddle_position =
+        paddle_transform.translation.x + direction * PADDLE_SPEED * time.delta_seconds();
 
     let left_bound = LEFT_WALL + WALL_THICKNESS / 2.0 + PADDLE_SIZE.x / 2.0 + PADDLE_PADDING;
     let right_bound = RIGHT_WALL - WALL_THICKNESS / 2.0 + PADDLE_SIZE.x / 2.0 - PADDLE_PADDING;

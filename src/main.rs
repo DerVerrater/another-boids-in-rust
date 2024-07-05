@@ -1,11 +1,10 @@
-
 use bevy::prelude::*;
 
-mod hello_world_plugin;
 mod breakout_plugin;
+mod hello_world_plugin;
 
-use hello_world_plugin::HelloPlugin;
 use breakout_plugin::BreakoutPlugin;
+use hello_world_plugin::HelloPlugin;
 
 fn main() {
     App::new()
