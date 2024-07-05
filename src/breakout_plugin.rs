@@ -143,6 +143,24 @@ fn ball_collision(ball: BoundingCircle, bounding_box: Aabb2d) -> Option<Collisio
     Some(side)
 }
 
+pub struct BreakoutPlugin;
+impl Plugin for BreakoutPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(Score(0))
+            .insert_resource(ClearColor(BACKGROUND_COLOR))
+            .add_event::<CollisionEvent>()
+            .add_systems(Startup, setup)
+            .add_systems(FixedUpdate, (
+                apply_velocity,
+                move_paddle,
+            ).chain())
+            .add_systems(FixedUpdate, (
+                check_for_collisions,
+                update_scoreboard
+            ));
+    }
+}
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
