@@ -1,4 +1,3 @@
-
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
@@ -7,16 +6,11 @@ const TURN_FACTOR: f32 = 1.;
 
 pub struct BoidsPlugin;
 
-impl Plugin for BoidsPlugin{
+impl Plugin for BoidsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .insert_resource(ClearColor(BACKGROUND_COLOR))
+        app.insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_systems(Startup, (spawn_camera, spawn_boids))
-            .add_systems(FixedUpdate, (
-                apply_velocity,
-                turn_if_edge,
-                check_keyboard,
-            ));
+            .add_systems(FixedUpdate, (apply_velocity, turn_if_edge, check_keyboard));
     }
 }
 
@@ -58,11 +52,7 @@ fn spawn_boids(
     let num_boids = 1000;
     for i in 0..num_boids {
         let frac = 2.0 * std::f32::consts::PI / (num_boids as f32) * (i as f32);
-        let vel = Vec3::new(
-            frac.cos() * 10.0,
-            frac.sin() * 10.0,
-            0.0,
-        );
+        let vel = Vec3::new(frac.cos() * 10.0, frac.sin() * 10.0, 0.0);
         commands.spawn((
             BoidBundle::new(vel),
             MaterialMesh2dBundle {
@@ -80,7 +70,7 @@ fn spawn_boids(
             mesh: meshes.add(Triangle2d::default()).into(),
             material: materials.add(PLAYERBOID_COLOR),
             ..default()
-        }
+        },
     ));
 }
 

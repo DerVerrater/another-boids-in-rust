@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
+mod birdoids_plugin;
 mod breakout_plugin;
 mod hello_world_plugin;
-mod birdoids_plugin;
 
+use birdoids_plugin::BoidsPlugin;
 use breakout_plugin::BreakoutPlugin;
 use hello_world_plugin::HelloPlugin;
-use birdoids_plugin::BoidsPlugin;
 
 fn main() {
     App::new()
