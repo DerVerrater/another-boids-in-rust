@@ -1,7 +1,8 @@
 
-use bevy::{math::VectorSpace, prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
+const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 
 pub struct BoidsPlugin;
 
@@ -71,27 +72,11 @@ fn spawn_boids(
     }
 
     commands.spawn((
-        SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(0.0, 10.0, 0.0),
-                scale: Vec3::new(1.0, 1.0, 1.0),
-                ..default()
-            },
-            sprite: Sprite {
-                color: Color::srgb(1.0, 0.0, 0.0),
-                ..default()
-            },
-            ..default()
-        },
-        Boid
-    ));
-
-    commands.spawn((
         BoidBundle::new(Vec3::new(0.0, 0.0, 0.0)),
         PlayerBoid,
         MaterialMesh2dBundle {
             mesh: meshes.add(Triangle2d::default()).into(),
-            material: materials.add(Color::srgb(1.0, 0.0, 0.0)),
+            material: materials.add(PLAYERBOID_COLOR),
             ..default()
         }
     ));
