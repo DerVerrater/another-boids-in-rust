@@ -10,7 +10,10 @@ impl Plugin for BoidsPlugin{
         app
             .insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_systems(Startup, (spawn_camera, spawn_boids))
-            .add_systems(FixedUpdate, apply_velocity);
+            .add_systems(FixedUpdate, (
+                apply_velocity,
+                check_keyboard,
+            ));
     }
 }
 
@@ -83,5 +86,14 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>
     for (mut transform, velocity) in &mut query {
         let delta_position = **velocity * time.delta_seconds();
         transform.translation += delta_position;
+    }
+}
+
+fn check_keyboard(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::KeyQ) {
+        app_exit_events.send(bevy::app::AppExit::Success);
     }
 }
