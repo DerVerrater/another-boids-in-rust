@@ -1,5 +1,5 @@
 
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{math::VectorSpace, prelude::*, sprite::MaterialMesh2dBundle};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 
@@ -20,7 +20,12 @@ impl Plugin for BoidsPlugin{
 #[derive(Component)]
 struct Boid;
 
-#[derive(Component, Deref)]
+// It's a Boid, but with an extra component so the player
+// can control it from the keyboard
+#[derive(Component)]
+struct PlayerBoid;
+
+#[derive(Component, Deref, DerefMut)]
 struct Velocity(Vec3);
 
 #[derive(Bundle)]
@@ -80,6 +85,16 @@ fn spawn_boids(
         },
         Boid
     ));
+
+    commands.spawn((
+        BoidBundle::new(Vec3::new(0.0, 0.0, 0.0)),
+        PlayerBoid,
+        MaterialMesh2dBundle {
+            mesh: meshes.add(Triangle2d::default()).into(),
+            material: materials.add(Color::srgb(1.0, 0.0, 0.0)),
+            ..default()
+        }
+    ));
 }
 
 fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
@@ -92,8 +107,27 @@ fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>
 fn check_keyboard(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
+    mut query: Query<(&mut Velocity, &Transform), With<PlayerBoid>>,
+    time: Res<Time>,
 ) {
     if keyboard_input.just_pressed(KeyCode::KeyQ) {
         app_exit_events.send(bevy::app::AppExit::Success);
     }
+
+    let (mut pvelocity, ptransform) = query.single_mut();
+    let mut dir = Vec2::ZERO;
+    if keyboard_input.pressed(KeyCode::ArrowLeft) {
+        dir.x -= 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowRight) {
+        dir.x += 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowDown) {
+        dir.y -= 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowUp) {
+        dir.y += 1.0;
+    }
+
+    **pvelocity = **pvelocity + dir.extend(0.0);
 }
