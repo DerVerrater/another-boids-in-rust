@@ -2,16 +2,14 @@ use std::time::Duration;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_spatial::{
-    AutomaticUpdate,
-    SpatialAccess,
-    TransformMode,
-    kdtree::KDTree2,
+    kdtree::KDTree2, AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode
 };
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.;
 const BOID_VIEW_RANGE: f32 = 50.0;
+const COHESION_FACTOR: f32 = 1.0;
 pub struct BoidsPlugin;
 
 impl Plugin for BoidsPlugin {
@@ -19,7 +17,8 @@ impl Plugin for BoidsPlugin {
         app
             .add_plugins(AutomaticUpdate::<TrackedByKdTree>::new()
                 .with_frequency(Duration::from_secs_f32(0.3))
-                .with_transform(TransformMode::GlobalTransform))
+                .with_transform(TransformMode::GlobalTransform)
+                .with_spatial_ds(SpatialStructure::KDTree2))
             .insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_systems(Startup, (spawn_camera, spawn_boids))
             .add_systems(FixedUpdate, (
@@ -74,7 +73,7 @@ fn spawn_boids(
     let num_boids = 1000;
     for i in 0..num_boids {
         let frac = 2.0 * std::f32::consts::PI / (num_boids as f32) * (i as f32);
-        let vel = Vec3::new(frac.cos() * 10.0, frac.sin() * 10.0, 0.0);
+        let vel = Vec3::new(frac.cos() * 10.0, frac.sin() * 100.0, 0.0);
         commands.spawn((
             BoidBundle::new(vel),
             MaterialMesh2dBundle {
@@ -157,7 +156,7 @@ fn check_keyboard(
 
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut query: Query<&mut Boid, With<TrackedByKdTree>>,
+    mut query: Query<(&Transform, &mut Velocity), With<TrackedByKdTree>>,
     player: Query<&Transform, With<PlayerBoid>>,
 ) {
     let player_transform = player.get_single().unwrap();
@@ -166,4 +165,15 @@ fn cohesion(
         player_transform.translation.xy(),
         BOID_VIEW_RANGE
     );
+
+    if neighbors.len() > 0 {
+        let center_of_mass = neighbors.iter()
+            .map(|(pos, _opt_entity)| pos )
+            .sum::<Vec2>() / neighbors.len() as f32;
+    
+        for (transform, mut velocity) in &mut query {
+            let towards = (transform.translation.xy() - center_of_mass).normalize();
+            **velocity += towards.extend(0.0) * COHESION_FACTOR;
+        }
+    }
 }
