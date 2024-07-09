@@ -1,16 +1,33 @@
+use std::time::Duration;
+
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use bevy_spatial::{
+    AutomaticUpdate,
+    SpatialAccess,
+    TransformMode,
+    kdtree::KDTree2,
+};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.;
-
+const BOID_VIEW_RANGE: f32 = 50.0;
 pub struct BoidsPlugin;
 
 impl Plugin for BoidsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ClearColor(BACKGROUND_COLOR))
+        app
+            .add_plugins(AutomaticUpdate::<TrackedByKdTree>::new()
+                .with_frequency(Duration::from_secs_f32(0.3))
+                .with_transform(TransformMode::GlobalTransform))
+            .insert_resource(ClearColor(BACKGROUND_COLOR))
             .add_systems(Startup, (spawn_camera, spawn_boids))
-            .add_systems(FixedUpdate, (apply_velocity, turn_if_edge, check_keyboard));
+            .add_systems(FixedUpdate, (
+                apply_velocity,
+                turn_if_edge,
+                check_keyboard,
+                cohesion,
+            ));
     }
 }
 
@@ -25,10 +42,14 @@ struct PlayerBoid;
 #[derive(Component, Deref, DerefMut)]
 struct Velocity(Vec3);
 
+#[derive(Component)]
+struct TrackedByKdTree;
+
 #[derive(Bundle)]
 struct BoidBundle {
     boid: Boid,
     velocity: Velocity,
+    spatial: TrackedByKdTree,
 }
 
 impl BoidBundle {
@@ -36,6 +57,7 @@ impl BoidBundle {
         Self {
             boid: Boid,
             velocity: Velocity(vel),
+            spatial: TrackedByKdTree,
         }
     }
 }
@@ -131,4 +153,17 @@ fn check_keyboard(
     }
 
     **pvelocity = **pvelocity + dir.extend(0.0);
+}
+
+fn cohesion(
+    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    mut query: Query<&mut Boid, With<TrackedByKdTree>>,
+    player: Query<&Transform, With<PlayerBoid>>,
+) {
+    let player_transform = player.get_single().unwrap();
+
+    let neighbors = spatial_tree.within_distance(
+        player_transform.translation.xy(),
+        BOID_VIEW_RANGE
+    );
 }
