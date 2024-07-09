@@ -9,7 +9,7 @@ const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.;
 const BOID_VIEW_RANGE: f32 = 50.0;
-const COHESION_FACTOR: f32 = 1.0;
+const COHESION_FACTOR: f32 = 0.1;
 pub struct BoidsPlugin;
 
 impl Plugin for BoidsPlugin {
@@ -156,24 +156,27 @@ fn check_keyboard(
 
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut query: Query<(&Transform, &mut Velocity), With<TrackedByKdTree>>,
-    player: Query<&Transform, With<PlayerBoid>>,
+    boids: Query<&Transform, With<Boid>>,
+    mut velocities: Query<&mut Velocity, With<Boid>>,
 ) {
-    let player_transform = player.get_single().unwrap();
-
-    let neighbors = spatial_tree.within_distance(
-        player_transform.translation.xy(),
-        BOID_VIEW_RANGE
-    );
-
-    if neighbors.len() > 0 {
-        let center_of_mass = neighbors.iter()
-            .map(|(pos, _opt_entity)| pos )
-            .sum::<Vec2>() / neighbors.len() as f32;
-    
-        for (transform, mut velocity) in &mut query {
-            let towards = (center_of_mass - transform.translation.xy()).normalize();
-            **velocity += towards.extend(0.0) * COHESION_FACTOR;
-        }
+    let it = boids.iter()
+        .map(|transform| {
+            let neighbors = spatial_tree.within_distance(
+                transform.translation.xy(),
+                BOID_VIEW_RANGE
+            );
+            if neighbors.len() > 0 {
+                let center_of_mass = neighbors.iter()
+                    .map(|(pos, _opt_entity)| pos )
+                    .sum::<Vec2>() / neighbors.len() as f32;
+            
+                for mut velocity in &mut velocities {
+                    let towards = (center_of_mass - transform.translation.xy()).normalize();
+                    **velocity += towards.extend(0.0) * COHESION_FACTOR;
+                }
+            }
+        });
+    for _ in it{
+        continue;
     }
 }
