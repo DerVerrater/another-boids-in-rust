@@ -172,7 +172,7 @@ fn cohesion(
             .sum::<Vec2>() / neighbors.len() as f32;
     
         for (transform, mut velocity) in &mut query {
-            let towards = (transform.translation.xy() - center_of_mass).normalize();
+            let towards = (center_of_mass - transform.translation.xy()).normalize();
             **velocity += towards.extend(0.0) * COHESION_FACTOR;
         }
     }
