@@ -170,6 +170,11 @@ fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     mut boids: Query<(&Transform, &mut Velocity), With<Boid>>,
 ) {
+    // for each boid
+    // find neighbors
+    // find center-of-mass of neighbors
+    // find vector from boid to flock CoM
+    // apply force
     for (transform, mut velocity) in &mut boids {
         let neighbors = spatial_tree.within_distance(
             transform.translation.xy(),
@@ -177,11 +182,13 @@ fn cohesion(
         );
         if neighbors.len() > 0 {
             let center_of_mass = neighbors.iter()
-                .map(|(pos, _opt_entity)| pos )
-                .sum::<Vec2>() / neighbors.len() as f32;
-
-            let towards = (center_of_mass - transform.translation.xy()).normalize();
-            **velocity += towards.extend(0.0) * COHESION_FACTOR;
+                .map(|(pos, _)| pos.extend(0.0) )
+                .fold(transform.translation, |acc, neighbor| {
+                    acc + neighbor
+                }) / (neighbors.len()) as f32;
+            
+            let towards = (center_of_mass - transform.translation).normalize();
+            velocity.0 += towards * COHESION_FACTOR;
         }
     }
 }
