@@ -7,10 +7,10 @@ use bevy_spatial::{
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
-const TURN_FACTOR: f32 = 1.;
+const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 1.0;
-const SEPARATION_FACTOR: f32 = 0.1;
+const SEPARATION_FACTOR: f32 = 1.0;
 
 pub struct BoidsPlugin;
 
@@ -81,7 +81,7 @@ fn spawn_boids(
     let num_boids = 1000;
     for i in 0..num_boids {
         let frac = 2.0 * std::f32::consts::PI / (num_boids as f32) * (i as f32);
-        let vel = Vec3::new(frac.cos() * 10.0, frac.sin() * 100.0, 0.0);
+        let vel = Vec3::new(frac.cos() * 10.0, frac.sin() * 10.0, 0.0);
         commands.spawn((
             BoidBundle::new(vel),
             MaterialMesh2dBundle {
