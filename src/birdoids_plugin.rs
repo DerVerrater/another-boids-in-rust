@@ -87,6 +87,10 @@ fn spawn_boids(
             MaterialMesh2dBundle {
                 mesh: meshes.add(Circle::default()).into(),
                 material: materials.add(Color::srgb(1.0, 1.0, 1.0)),
+                transform: Transform {
+                    translation: vel * 20.0,
+                    ..default()
+                },
                 ..default()
             },
         ));
