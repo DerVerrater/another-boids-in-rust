@@ -168,14 +168,14 @@ fn check_keyboard(
 
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &mut Velocity), With<Boid>>,
+    mut boids: Query<(&Transform, &mut Acceleration), With<Boid>>,
 ) {
     // for each boid
     // find neighbors
     // find center-of-mass of neighbors
     // find vector from boid to flock CoM
     // apply force
-    for (transform, mut velocity) in &mut boids {
+    for (transform, mut acceleration) in &mut boids {
         let neighbors = spatial_tree.within_distance(
             transform.translation.xy(),
             BOID_VIEW_RANGE
@@ -188,7 +188,7 @@ fn cohesion(
                 }) / (neighbors.len()) as f32;
             
             let towards = (center_of_mass - transform.translation).normalize();
-            velocity.0 += towards * COHESION_FACTOR;
+            acceleration.0 += towards * COHESION_FACTOR;
         }
     }
 }
