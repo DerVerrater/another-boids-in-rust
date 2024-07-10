@@ -11,6 +11,7 @@ const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 1.0;
 const SEPARATION_FACTOR: f32 = 1.0;
+const ALIGNMENT_FACTOR: f32 = 1.0;
 
 pub struct BoidsPlugin;
 
@@ -27,8 +28,10 @@ impl Plugin for BoidsPlugin {
                 apply_velocity,
                 turn_if_edge,
                 check_keyboard,
-                cohesion,
+                // cohesion,
                 separation,
+                // alignment,
+                space_brakes,
             ));
     }
 }
@@ -78,10 +81,10 @@ fn spawn_boids(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let num_boids = 1000;
+    let num_boids = 50;
     for i in 0..num_boids {
         let frac = 2.0 * std::f32::consts::PI / (num_boids as f32) * (i as f32);
-        let vel = Vec3::new(frac.cos() * 10.0, frac.sin() * 10.0, 0.0);
+        let vel = Vec3::new(frac.cos() * 1.0, frac.sin() * 1.0, 0.0);
         commands.spawn((
             BoidBundle::new(vel),
             MaterialMesh2dBundle {
@@ -105,6 +108,13 @@ fn spawn_boids(
             ..default()
         },
     ));
+}
+
+fn space_brakes(mut mobs: Query<&mut Acceleration, With<Boid>>) {
+    for mut accel in &mut mobs {
+        let braking_dir = -accel.0 * 0.01;
+        accel.0 += braking_dir;
+    }
 }
 
 fn turn_if_edge(
