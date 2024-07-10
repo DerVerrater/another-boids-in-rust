@@ -10,7 +10,7 @@ const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 0.1;
-const SEPARATION_FACTOR: f32 = 10.;
+const SEPARATION_FACTOR: f32 = 0.05;
 
 pub struct BoidsPlugin;
 
@@ -215,7 +215,7 @@ fn separation(
 // TODO: Make this an exponential so force gets stronger faster as the points approach.
 fn separation_force(us: Vec2, neighbor: Vec2) -> Acceleration {
     let distance = neighbor - us;
-    Acceleration((distance * SEPARATION_FACTOR).extend(0.0))
+    Acceleration(-(distance * SEPARATION_FACTOR).extend(0.0))
 }
 
 fn alignment(
