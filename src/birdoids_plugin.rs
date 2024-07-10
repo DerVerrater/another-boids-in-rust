@@ -9,8 +9,8 @@ const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.;
 const BOID_VIEW_RANGE: f32 = 50.0;
-const COHESION_FACTOR: f32 = 0.1;
-const SEPARATION_FACTOR: f32 = 0.05;
+const COHESION_FACTOR: f32 = 1.0;
+const SEPARATION_FACTOR: f32 = 0.1;
 
 pub struct BoidsPlugin;
 
@@ -168,10 +168,9 @@ fn check_keyboard(
 
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    boids: Query<&Transform, With<Boid>>,
-    mut velocities: Query<&mut Velocity, With<Boid>>,
+    mut boids: Query<(&Transform, &mut Velocity), With<Boid>>,
 ) {
-    for transform in &boids {
+    for (transform, mut velocity) in &mut boids {
         let neighbors = spatial_tree.within_distance(
             transform.translation.xy(),
             BOID_VIEW_RANGE
@@ -180,11 +179,9 @@ fn cohesion(
             let center_of_mass = neighbors.iter()
                 .map(|(pos, _opt_entity)| pos )
                 .sum::<Vec2>() / neighbors.len() as f32;
-        
-            for mut velocity in &mut velocities {
-                let towards = (center_of_mass - transform.translation.xy()).normalize();
-                **velocity += towards.extend(0.0) * COHESION_FACTOR;
-            }
+
+            let towards = (center_of_mass - transform.translation.xy()).normalize();
+            **velocity += towards.extend(0.0) * COHESION_FACTOR;
         }
     }
 }
@@ -200,7 +197,7 @@ fn separation(
     for (boid_transform, mut boid_acceleration) in &mut boids {
         let neighbors = spatial_tree.within_distance(
             boid_transform.translation.xy(),
-            BOID_VIEW_RANGE,
+            BOID_VIEW_RANGE / 4.0,
         );
         let accel = neighbors.iter()
             .map(|(pos, _)| pos.extend(0.0))
