@@ -159,24 +159,20 @@ fn cohesion(
     boids: Query<&Transform, With<Boid>>,
     mut velocities: Query<&mut Velocity, With<Boid>>,
 ) {
-    let it = boids.iter()
-        .map(|transform| {
-            let neighbors = spatial_tree.within_distance(
-                transform.translation.xy(),
-                BOID_VIEW_RANGE
-            );
-            if neighbors.len() > 0 {
-                let center_of_mass = neighbors.iter()
-                    .map(|(pos, _opt_entity)| pos )
-                    .sum::<Vec2>() / neighbors.len() as f32;
-            
-                for mut velocity in &mut velocities {
-                    let towards = (center_of_mass - transform.translation.xy()).normalize();
-                    **velocity += towards.extend(0.0) * COHESION_FACTOR;
-                }
+    for transform in &boids {
+        let neighbors = spatial_tree.within_distance(
+            transform.translation.xy(),
+            BOID_VIEW_RANGE
+        );
+        if neighbors.len() > 0 {
+            let center_of_mass = neighbors.iter()
+                .map(|(pos, _opt_entity)| pos )
+                .sum::<Vec2>() / neighbors.len() as f32;
+        
+            for mut velocity in &mut velocities {
+                let towards = (center_of_mass - transform.translation.xy()).normalize();
+                **velocity += towards.extend(0.0) * COHESION_FACTOR;
             }
-        });
-    for _ in it{
-        continue;
+        }
     }
 }
