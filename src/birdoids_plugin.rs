@@ -27,7 +27,7 @@ impl Plugin for BoidsPlugin {
                 apply_velocity,
                 turn_if_edge,
                 check_keyboard,
-                // cohesion,
+                cohesion,
                 separation,
             ));
     }
