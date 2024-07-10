@@ -228,8 +228,39 @@ fn separation_force(us: Vec2, neighbor: Vec2) -> Acceleration {
 
 fn alignment(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    boids: Query<&Transform, With<Boid>>,
-    mut accelerations: Query<&mut Acceleration, With<Boid>>
+    mut boids: Query<(&Transform, &Velocity, &mut Acceleration), With<Boid>>,
+    boid_velocities: Query<&Velocity, With<Boid>>,
 ) {
+    // for each boid
+    // find neighbors
+    // find average velocity vector of neighbors
+    // calculate steering force
+    //      perpendicular so that magnitude is constant
+    // apply steering force
 
+    for (transform, velocity, mut acceleration) in &mut boids {
+        let neighbors = spatial_tree.within_distance(
+            transform.translation.xy(),
+            BOID_VIEW_RANGE,
+        );
+        // averaging divides by length. Guard against an empty set of neighbors
+        // so that we don't divide by zero.
+        if neighbors.len() > 0 {
+            let velocity_sum = neighbors.iter()
+                .map(|(_pos, entity_id)| {
+                    if let Some(boid_id) = entity_id {
+                        if let Ok(boid) = boid_velocities.get(*boid_id) {
+                            boid.0
+                        } else {
+                            panic!("Err: Got a Boid during neighbor collection, but it has no Entity ID!");
+                        }
+                    } else {
+                        panic!("Err: Found entity with component TrackedByKdTree that has no Entity ID!");
+                    }
+            }).sum::<Vec3>();
+            let velocity_average = velocity_sum / (neighbors.len() as f32);
+            let deviation = -velocity.0 + velocity_average;
+            acceleration.0 += deviation * ALIGNMENT_FACTOR;
+        }
+    }
 }
