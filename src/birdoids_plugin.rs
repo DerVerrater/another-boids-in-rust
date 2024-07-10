@@ -10,6 +10,8 @@ const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 0.1;
+const SEPARATION_FACTOR: f32 = 10.;
+
 pub struct BoidsPlugin;
 
 impl Plugin for BoidsPlugin {
@@ -25,7 +27,8 @@ impl Plugin for BoidsPlugin {
                 apply_velocity,
                 turn_if_edge,
                 check_keyboard,
-                cohesion,
+                // cohesion,
+                separation,
             ));
     }
 }
@@ -41,6 +44,9 @@ struct PlayerBoid;
 #[derive(Component, Deref, DerefMut)]
 struct Velocity(Vec3);
 
+#[derive(Component, Deref, DerefMut)]
+struct Acceleration(Vec3);
+
 #[derive(Component)]
 struct TrackedByKdTree;
 
@@ -48,6 +54,7 @@ struct TrackedByKdTree;
 struct BoidBundle {
     boid: Boid,
     velocity: Velocity,
+    accel: Acceleration,
     spatial: TrackedByKdTree,
 }
 
@@ -56,6 +63,7 @@ impl BoidBundle {
         Self {
             boid: Boid,
             velocity: Velocity(vel),
+            accel: Acceleration(Vec3::ZERO),
             spatial: TrackedByKdTree,
         }
     }
@@ -120,9 +128,13 @@ fn turn_if_edge(
     }
 }
 
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, time: Res<Time>) {
-    for (mut transform, velocity) in &mut query {
-        let delta_position = **velocity * time.delta_seconds();
+fn apply_velocity(
+    mut query: Query<(&mut Transform, &Velocity, &Acceleration)>,
+    time: Res<Time>
+) {
+    for (mut transform, velocity, acceleration) in &mut query {
+        let delta_v = **acceleration * time.delta_seconds();
+        let delta_position = (**velocity + delta_v) * time.delta_seconds();
         transform.translation += delta_position;
     }
 }
@@ -175,4 +187,41 @@ fn cohesion(
             }
         }
     }
+}
+
+fn separation(
+    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    mut boids: Query<(&Transform, &mut Acceleration), With<Boid>>,
+) {
+    // for each boid
+    // find neighbors
+    // sum force from neighbors
+    // apply force
+    for (boid_transform, mut boid_acceleration) in &mut boids {
+        let neighbors = spatial_tree.within_distance(
+            boid_transform.translation.xy(),
+            BOID_VIEW_RANGE,
+        );
+        let accel = neighbors.iter()
+            .map(|(pos, _)| pos.extend(0.0))
+            .fold(Vec3::ZERO, |accumulator, neighbor |{
+                let force = separation_force(boid_transform.translation.xy(), neighbor.xy());
+                accumulator + *force
+            });
+        boid_acceleration.0 += accel;
+    }
+}
+
+// TODO: Make this an exponential so force gets stronger faster as the points approach.
+fn separation_force(us: Vec2, neighbor: Vec2) -> Acceleration {
+    let distance = neighbor - us;
+    Acceleration((distance * SEPARATION_FACTOR).extend(0.0))
+}
+
+fn alignment(
+    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    boids: Query<&Transform, With<Boid>>,
+    mut accelerations: Query<&mut Acceleration, With<Boid>>
+) {
+
 }
