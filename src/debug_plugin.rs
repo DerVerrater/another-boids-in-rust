@@ -15,7 +15,7 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn((
-        Cursor,
+        ScannerWidget::default(),
         MaterialMesh2dBundle {
             mesh: meshes.add(Annulus::new(9.5, 10.0)).into(),
             material: materials.add(Color::srgb(0.0, 0.0, 0.0)),
@@ -24,8 +24,37 @@ fn setup(
     ));
 }
 
+#[derive(Bundle)]
+struct ScannerWidget {
+    cursor: Cursor,
+    select: SelectionMode,
+    scan: ScannerMode,
+}
+
+impl Default for ScannerWidget {
+    fn default() -> Self {
+        Self {
+            cursor: Cursor,
+            select: SelectionMode::CircularArea,
+            scan: ScannerMode::CenterOfMass,
+        }
+    }
+}
+
 #[derive(Component)]
 struct Cursor;
+
+#[derive(Component)]
+enum SelectionMode {
+    NearestSingle,
+    CircularArea,
+}
+
+#[derive(Component)]
+enum ScannerMode {
+    CenterOfMass,
+    Velocity,
+}
 
 fn update_cursor(
     window: Query<&Window, With<PrimaryWindow>>,
