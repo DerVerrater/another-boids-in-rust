@@ -226,8 +226,8 @@ pub(crate) fn center_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2
             // add running sum & new point for new running sum
             (idx, sum + point)
         });
+    let avg = sum / ((len + 1) as f32);
     
-    let avg = sum / (len as f32);
     Some(avg)
 }
 
