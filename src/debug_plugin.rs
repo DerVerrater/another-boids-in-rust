@@ -5,7 +5,7 @@ use bevy_spatial::{
 };
 
 use crate::birdoids_plugin::{
-    center_of_boids, Acceleration, Boid, TrackedByKdTree, Velocity
+    center_of_boids, velocity_of_boids, Acceleration, Boid, TrackedByKdTree, Velocity
 };
 
 const SCANRADIUS: f32 = 50.0;
@@ -154,7 +154,22 @@ fn do_scan(
                         );
                     }
                 },
-                ScannerMode::Velocity => todo!(),
+                ScannerMode::Velocity => {
+                    if let Some(avg_velocity) = velocity_of_boids(
+                        boids.iter().map(|item| {
+                            let entity_id = item.1.unwrap_or_else(|| panic!("Entity has no ID!"));
+                            let (_, vel, _) = boids_query.get(entity_id).unwrap_or_else(|_| panic!("Boid has no Velocity component!"));
+                            (*vel).xy() * 50.0
+                        })
+                    ) {
+                        // cursor_pos.translation is already in world space, so I can skip the window -> world transform like in update_cursor()
+                        gizmos.line_2d(
+                            cursor_pos.translation.xy(),
+                            cursor_pos.translation.xy() + avg_velocity,
+                            bevy::color::palettes::css::RED
+                        );
+                    }
+                },
             }
         },
     }
