@@ -194,14 +194,10 @@ fn cohesion(
             transform.translation.xy(),
             BOID_VIEW_RANGE
         );
-        if neighbors.len() > 0 {
-            let center_of_mass = neighbors.iter()
-                .map(|(pos, _)| pos.extend(0.0) )
-                .fold(transform.translation, |acc, neighbor| {
-                    acc + neighbor
-                }) / (neighbors.len()) as f32;
-            
-            let towards = (center_of_mass - transform.translation).normalize();
+        if let Some(center_mass) = center_of_boids(
+            neighbors.iter().map(|boid| boid.0 )
+        ) {
+            let towards = (center_mass.extend(0.0) - transform.translation).normalize();
             acceleration.0 += towards * COHESION_FACTOR;
         }
     }
