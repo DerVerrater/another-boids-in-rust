@@ -159,7 +159,7 @@ fn do_scan(
                         boids.iter().map(|item| {
                             let entity_id = item.1.unwrap_or_else(|| panic!("Entity has no ID!"));
                             let (_, vel, _) = boids_query.get(entity_id).unwrap_or_else(|_| panic!("Boid has no Velocity component!"));
-                            (*vel).xy() * 50.0
+                            (*vel).xy() * 1.0
                         })
                     ) {
                         // cursor_pos.translation is already in world space, so I can skip the window -> world transform like in update_cursor()

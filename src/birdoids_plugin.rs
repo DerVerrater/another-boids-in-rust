@@ -19,7 +19,7 @@ impl Plugin for BoidsPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugins(AutomaticUpdate::<TrackedByKdTree>::new()
-                .with_frequency(Duration::from_secs_f32(0.3))
+                // .with_frequency(Duration::from_secs_f32(0.3))
                 .with_transform(TransformMode::GlobalTransform)
                 .with_spatial_ds(SpatialStructure::KDTree2))
             .insert_resource(ClearColor(BACKGROUND_COLOR))
@@ -28,10 +28,10 @@ impl Plugin for BoidsPlugin {
                 apply_velocity,
                 turn_if_edge,
                 check_keyboard,
-                // cohesion,
+                cohesion,
                 separation,
-                // alignment,
-                space_brakes,
+                alignment,
+                // space_brakes,
             ));
     }
 }
