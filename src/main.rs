@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 
 mod birdoids_plugin;
-mod breakout_plugin;
-mod hello_world_plugin;
 
 use birdoids_plugin::BoidsPlugin;
 

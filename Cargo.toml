@@ -1,5 +1,5 @@
 [package]
-name = "bevy-testing"
+name = "another-boids-in-rust"
 version = "0.1.0"
 edition = "2021"
 
