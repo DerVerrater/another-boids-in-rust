@@ -1,5 +1,14 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::PrimaryWindow};
+use bevy_spatial::{
+    kdtree::KDTree2,
+    SpatialAccess,
+};
 
+use crate::birdoids_plugin::{
+    center_of_boids, Acceleration, Boid, TrackedByKdTree, Velocity
+};
+
+const SCANRADIUS: f32 = 50.0;
 pub struct BoidsDebugPlugin;
 
 impl Plugin for BoidsDebugPlugin {
@@ -8,7 +17,7 @@ impl Plugin for BoidsDebugPlugin {
             .add_systems(FixedUpdate, (
                 update_cursor,
                 update_scanner_mode,
-                print_gizmo_config,
+                do_scan,
             ));
     }
 }
@@ -21,7 +30,7 @@ fn setup(
     commands.spawn((
         ScannerWidget::default(),
         MaterialMesh2dBundle {
-            mesh: meshes.add(Annulus::new(9.5, 10.0)).into(),
+            mesh: meshes.add(Annulus::new(SCANRADIUS - 1.0, SCANRADIUS)).into(),
             material: materials.add(Color::srgb(0.0, 0.0, 0.0)),
             ..default()
         },
@@ -112,4 +121,41 @@ fn print_gizmo_config(
 ) {
     let (select, scan) = query.get_single().unwrap();
     println!("Selection: {select:?}, Scanning: {scan:?}");
+}
+
+fn do_scan(
+    boids_query: Query<(&Transform, &Velocity, &Acceleration), With<Boid>>,
+    scanner_query: Query<(&Transform, &SelectionMode, &ScannerMode), With<Cursor>>,
+    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    /* Push info to summary somewhere */
+    mut gizmos: Gizmos,
+) {
+    let (cursor_pos, select_mode, scan_mode) = scanner_query.get_single().unwrap();
+    match select_mode {
+        SelectionMode::NearestSingle => todo!(),
+        SelectionMode::CircularArea => {
+            let boids = spatial_tree.within_distance(
+                cursor_pos.translation.xy(),
+                SCANRADIUS,
+            );
+            match scan_mode {
+                ScannerMode::CenterOfMass => {
+                    if let Some(center_mass) = center_of_boids(
+                        // boids returns too many things.
+                        // Map over it and extract only the Vec3's
+                        boids.iter().map(|item| {
+                            item.0
+                        })
+                    ) {
+                        gizmos.circle_2d(
+                            center_mass,
+                            1.0,
+                            bevy::color::palettes::css::RED
+                        );
+                    }
+                },
+                ScannerMode::Velocity => todo!(),
+            }
+        },
+    }
 }

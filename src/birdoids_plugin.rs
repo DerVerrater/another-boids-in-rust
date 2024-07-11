@@ -37,7 +37,7 @@ impl Plugin for BoidsPlugin {
 }
 
 #[derive(Component)]
-struct Boid;
+pub(crate) struct Boid;
 
 // It's a Boid, but with an extra component so the player
 // can control it from the keyboard
@@ -45,13 +45,13 @@ struct Boid;
 struct PlayerBoid;
 
 #[derive(Component, Deref, DerefMut)]
-struct Velocity(Vec3);
+pub(crate) struct Velocity(Vec3);
 
 #[derive(Component, Deref, DerefMut)]
-struct Acceleration(Vec3);
+pub(crate) struct Acceleration(Vec3);
 
 #[derive(Component)]
-struct TrackedByKdTree;
+pub(crate) struct TrackedByKdTree;
 
 #[derive(Bundle)]
 struct BoidBundle {
@@ -205,6 +205,30 @@ fn cohesion(
             acceleration.0 += towards * COHESION_FACTOR;
         }
     }
+}
+
+pub(crate) fn center_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
+    // Average the points by summing them all together, and dividing by
+    // the total count.
+    // Passing the points as an iterator means we lose the length of the
+    // list. The `.enumerate()` iterator reintroduces that count.
+    let mut points = points.enumerate();
+    
+    // Empty iterators have no points and so no center of mass.
+    // Try to get the first one, but exit with None if it doesn't yield.
+    let init = points.next()?;
+    
+    // if we get one, fold all the remaining values into it.
+    let (len, sum) = points.fold(
+        init,
+        |(len, sum), (idx, point)| {
+            // replace length with most recent index
+            // add running sum & new point for new running sum
+            (idx, sum + point)
+        });
+    
+    let avg = sum / (len as f32);
+    Some(avg)
 }
 
 fn separation(
