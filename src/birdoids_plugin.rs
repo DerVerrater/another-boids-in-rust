@@ -252,21 +252,19 @@ fn alignment(
         // averaging divides by length. Guard against an empty set of neighbors
         // so that we don't divide by zero.
         if neighbors.len() > 0 {
-            let velocity_sum = neighbors.iter()
-                .map(|(_pos, entity_id)| {
-                    if let Some(boid_id) = entity_id {
-                        if let Ok(boid) = boid_velocities.get(*boid_id) {
-                            boid.0
-                        } else {
-                            panic!("Err: Got a Boid during neighbor collection, but it has no Entity ID!");
-                        }
-                    } else {
-                        panic!("Err: Found entity with component TrackedByKdTree that has no Entity ID!");
-                    }
-            }).sum::<Vec3>();
-            let velocity_average = velocity_sum / (neighbors.len() as f32);
-            let deviation = -velocity.0 + velocity_average;
-            acceleration.0 += deviation * ALIGNMENT_FACTOR;
+            if let Some(avg_velocity) = velocity_of_boids(
+                neighbors.iter().map(|(vel, opt_entity)| {
+                    // I've observed no panics in the old version, nor the debug_plugins version
+                    // I'm not clear on the conditions that cause a None option, but I want to
+                    // crash when I find one.
+                    let entity_id = opt_entity.unwrap_or_else(|| panic!("Boid has no Entity ID!"));
+                    let vel = boid_velocities.get(entity_id).unwrap_or_else(|_| panic!("Boid has no velocity!"));
+                    (*vel).xy()
+                })
+            ) {
+                let deviation = -velocity.0 + avg_velocity.extend(0.0);
+                acceleration.0 += deviation * ALIGNMENT_FACTOR;
+            }
         }
     }
 }
