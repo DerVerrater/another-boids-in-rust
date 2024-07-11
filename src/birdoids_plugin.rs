@@ -207,38 +207,6 @@ fn cohesion(
     }
 }
 
-pub(crate) fn center_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
-    average_of_vec2s(points)
-}
-
-pub(crate) fn velocity_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
-    average_of_vec2s(points)
-}
-
-fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
-    // Average the points by summing them all together, and dividing by
-    // the total count.
-    // Passing the points as an iterator means we lose the length of the
-    // list. The `.enumerate()` iterator reintroduces that count.
-    let mut points = points.enumerate();
-    
-    // Empty iterators have no points and so no center of mass.
-    // Try to get the first one, but exit with None if it doesn't yield.
-    let init = points.next()?;
-    
-    // if we get one, fold all the remaining values into it.
-    let (len, sum) = points.fold(
-        init,
-        |(len, sum), (idx, point)| {
-            // replace length with most recent index
-            // add running sum & new point for new running sum
-            (idx, sum + point)
-        });
-    let avg = sum / ((len + 1) as f32);
-    
-    Some(avg)
-}
-
 fn separation(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     mut boids: Query<(&Transform, &mut Acceleration), With<Boid>>,
@@ -305,4 +273,37 @@ fn alignment(
             acceleration.0 += deviation * ALIGNMENT_FACTOR;
         }
     }
+}
+
+
+pub(crate) fn center_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
+    average_of_vec2s(points)
+}
+
+pub(crate) fn velocity_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
+    average_of_vec2s(points)
+}
+
+fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
+    // Average the points by summing them all together, and dividing by
+    // the total count.
+    // Passing the points as an iterator means we lose the length of the
+    // list. The `.enumerate()` iterator reintroduces that count.
+    let mut points = points.enumerate();
+    
+    // Empty iterators have no points and so no center of mass.
+    // Try to get the first one, but exit with None if it doesn't yield.
+    let init = points.next()?;
+    
+    // if we get one, fold all the remaining values into it.
+    let (len, sum) = points.fold(
+        init,
+        |(len, sum), (idx, point)| {
+            // replace length with most recent index
+            // add running sum & new point for new running sum
+            (idx, sum + point)
+        });
+    let avg = sum / ((len + 1) as f32);
+    
+    Some(avg)
 }
