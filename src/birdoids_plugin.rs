@@ -143,11 +143,12 @@ fn turn_if_edge(
 }
 
 fn apply_velocity(
-    mut query: Query<(&mut Transform, &Velocity, &Acceleration)>,
+    mut query: Query<(&mut Transform, &Velocity, &mut Acceleration)>,
     time: Res<Time>
 ) {
-    for (mut transform, velocity, acceleration) in &mut query {
+    for (mut transform, velocity, mut acceleration) in &mut query {
         let delta_v = **acceleration * time.delta_seconds();
+        **acceleration = Vec3::ZERO;
         let delta_position = (**velocity + delta_v) * time.delta_seconds();
         transform.translation += delta_position;
     }
