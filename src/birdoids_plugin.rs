@@ -9,9 +9,9 @@ const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
-const COHESION_FACTOR: f32 = 1.0;
-const SEPARATION_FACTOR: f32 = 1.0;
-const ALIGNMENT_FACTOR: f32 = 1.0;
+const COHESION_FACTOR: f32 = 1000.0;
+const SEPARATION_FACTOR: f32 = 100.0;
+const ALIGNMENT_FACTOR: f32 = 500.0;
 
 pub struct BoidsPlugin;
 
@@ -81,10 +81,10 @@ fn spawn_boids(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let num_boids = 50;
+    let num_boids = 1000;
     for i in 0..num_boids {
         let frac = 2.0 * std::f32::consts::PI / (num_boids as f32) * (i as f32);
-        let vel = Vec3::new(frac.cos() * 1.0, frac.sin() * 1.0, 0.0);
+        let vel = Vec3::new(frac.cos() * 1.0, frac.sin() * 1.0, 0.0) * 10.0;
         commands.spawn((
             BoidBundle::new(vel),
             MaterialMesh2dBundle {
