@@ -52,7 +52,7 @@ struct PlayerBoid;
 pub(crate) struct Velocity(Vec3);
 
 #[derive(Component, Deref, DerefMut)]
-pub(crate) struct Acceleration(Vec3);
+pub(crate) struct Force(Vec3);
 
 #[derive(Component)]
 pub(crate) struct TrackedByKdTree;
@@ -61,7 +61,7 @@ pub(crate) struct TrackedByKdTree;
 struct BoidBundle {
     boid: Boid,
     velocity: Velocity,
-    accel: Acceleration,
+    accel: Force,
     spatial: TrackedByKdTree,
 }
 
@@ -70,7 +70,7 @@ impl BoidBundle {
         Self {
             boid: Boid,
             velocity: Velocity(vel),
-            accel: Acceleration(Vec3::ZERO),
+            accel: Force(Vec3::ZERO),
             spatial: TrackedByKdTree,
         }
     }
@@ -114,7 +114,7 @@ fn spawn_boids(
     ));
 }
 
-fn space_brakes(mut mobs: Query<&mut Acceleration, With<Boid>>) {
+fn space_brakes(mut mobs: Query<&mut Force, With<Boid>>) {
     for mut accel in &mut mobs {
         let braking_dir = -accel.0 * SPACEBRAKES_COEFFICIENT;
         accel.0 += braking_dir;
@@ -147,7 +147,7 @@ fn turn_if_edge(
 }
 
 fn apply_velocity(
-    mut query: Query<(&mut Transform, &Velocity, &mut Acceleration)>,
+    mut query: Query<(&mut Transform, &Velocity, &mut Force)>,
     time: Res<Time>,
 ) {
     for (mut transform, velocity, mut acceleration) in &mut query {
@@ -187,7 +187,7 @@ fn check_keyboard(
 
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &mut Acceleration), With<Boid>>,
+    mut boids: Query<(&Transform, &mut Force), With<Boid>>,
 ) {
     // for each boid
     // find neighbors
@@ -205,7 +205,7 @@ fn cohesion(
 
 fn separation(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &mut Acceleration), With<Boid>>,
+    mut boids: Query<(&Transform, &mut Force), With<Boid>>,
 ) {
     // for each boid
     // find neighbors
@@ -226,14 +226,14 @@ fn separation(
 }
 
 // TODO: Make this an exponential so force gets stronger faster as the points approach.
-fn separation_force(us: Vec2, neighbor: Vec2) -> Acceleration {
+fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
     let distance = neighbor - us;
-    Acceleration(-(distance * SEPARATION_FACTOR).extend(0.0))
+    Force(-(distance * SEPARATION_FACTOR).extend(0.0))
 }
 
 fn alignment(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &Velocity, &mut Acceleration), With<Boid>>,
+    mut boids: Query<(&Transform, &Velocity, &mut Force), With<Boid>>,
     boid_velocities: Query<&Velocity, With<Boid>>,
 ) {
     // for each boid

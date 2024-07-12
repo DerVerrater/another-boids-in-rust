@@ -2,7 +2,7 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::PrimaryWindow};
 use bevy_spatial::{kdtree::KDTree2, SpatialAccess};
 
 use crate::birdoids_plugin::{
-    center_of_boids, velocity_of_boids, Acceleration, Boid, TrackedByKdTree, Velocity,
+    center_of_boids, velocity_of_boids, Force, Boid, TrackedByKdTree, Velocity,
 };
 
 const SCANRADIUS: f32 = 50.0;
@@ -117,7 +117,7 @@ fn print_gizmo_config(query: Query<(&SelectionMode, &ScannerMode), With<Cursor>>
 }
 
 fn do_scan(
-    boids_query: Query<(&Transform, &Velocity, &Acceleration), With<Boid>>,
+    boids_query: Query<(&Transform, &Velocity, &Force), With<Boid>>,
     scanner_query: Query<(&Transform, &SelectionMode, &ScannerMode), With<Cursor>>,
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     /* Push info to summary somewhere */
