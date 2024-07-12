@@ -1,11 +1,8 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::PrimaryWindow};
-use bevy_spatial::{
-    kdtree::KDTree2,
-    SpatialAccess,
-};
+use bevy_spatial::{kdtree::KDTree2, SpatialAccess};
 
 use crate::birdoids_plugin::{
-    center_of_boids, velocity_of_boids, Acceleration, Boid, TrackedByKdTree, Velocity
+    center_of_boids, velocity_of_boids, Acceleration, Boid, TrackedByKdTree, Velocity,
 };
 
 const SCANRADIUS: f32 = 50.0;
@@ -14,11 +11,7 @@ pub struct BoidsDebugPlugin;
 impl Plugin for BoidsDebugPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
-            .add_systems(FixedUpdate, (
-                update_cursor,
-                update_scanner_mode,
-                do_scan,
-            ));
+            .add_systems(FixedUpdate, (update_cursor, update_scanner_mode, do_scan));
     }
 }
 
@@ -30,7 +23,9 @@ fn setup(
     commands.spawn((
         ScannerWidget::default(),
         MaterialMesh2dBundle {
-            mesh: meshes.add(Annulus::new(SCANRADIUS - 1.0, SCANRADIUS)).into(),
+            mesh: meshes
+                .add(Annulus::new(SCANRADIUS - 1.0, SCANRADIUS))
+                .into(),
             material: materials.add(Color::srgb(0.0, 0.0, 0.0)),
             ..default()
         },
@@ -96,11 +91,11 @@ fn update_cursor(
 fn update_scanner_mode(
     keycodes: Res<ButtonInput<KeyCode>>,
     mousebuttons: Res<ButtonInput<MouseButton>>,
-    mut scanner_query: Query<(&mut SelectionMode, &mut ScannerMode), With<Cursor>>, 
+    mut scanner_query: Query<(&mut SelectionMode, &mut ScannerMode), With<Cursor>>,
 ) {
     // I'm making another assertion that there is exactly one scanner.
     let (mut select_mode, mut scan_mode) = scanner_query.get_single_mut().unwrap();
-    
+
     // Assign selection mode
     if keycodes.just_pressed(KeyCode::Digit1) {
         *select_mode = SelectionMode::NearestSingle;
@@ -116,9 +111,7 @@ fn update_scanner_mode(
     }
 }
 
-fn print_gizmo_config(
-    query: Query<(&SelectionMode, &ScannerMode), With<Cursor>>,
-) {
+fn print_gizmo_config(query: Query<(&SelectionMode, &ScannerMode), With<Cursor>>) {
     let (select, scan) = query.get_single().unwrap();
     println!("Selection: {select:?}, Scanning: {scan:?}");
 }
@@ -134,43 +127,34 @@ fn do_scan(
     match select_mode {
         SelectionMode::NearestSingle => todo!(),
         SelectionMode::CircularArea => {
-            let boids = spatial_tree.within_distance(
-                cursor_pos.translation.xy(),
-                SCANRADIUS,
-            );
+            let boids = spatial_tree.within_distance(cursor_pos.translation.xy(), SCANRADIUS);
             match scan_mode {
                 ScannerMode::CenterOfMass => {
                     if let Some(center_mass) = center_of_boids(
                         // boids returns too many things.
                         // Map over it and extract only the Vec3's
-                        boids.iter().map(|item| {
-                            item.0
-                        })
+                        boids.iter().map(|item| item.0),
                     ) {
-                        gizmos.circle_2d(
-                            center_mass,
-                            1.0,
-                            bevy::color::palettes::css::RED
-                        );
+                        gizmos.circle_2d(center_mass, 1.0, bevy::color::palettes::css::RED);
                     }
-                },
+                }
                 ScannerMode::Velocity => {
-                    if let Some(avg_velocity) = velocity_of_boids(
-                        boids.iter().map(|item| {
-                            let entity_id = item.1.unwrap_or_else(|| panic!("Entity has no ID!"));
-                            let (_, vel, _) = boids_query.get(entity_id).unwrap_or_else(|_| panic!("Boid has no Velocity component!"));
-                            (*vel).xy() * 1.0
-                        })
-                    ) {
+                    if let Some(avg_velocity) = velocity_of_boids(boids.iter().map(|item| {
+                        let entity_id = item.1.unwrap_or_else(|| panic!("Entity has no ID!"));
+                        let (_, vel, _) = boids_query
+                            .get(entity_id)
+                            .unwrap_or_else(|_| panic!("Boid has no Velocity component!"));
+                        (*vel).xy() * 1.0
+                    })) {
                         // cursor_pos.translation is already in world space, so I can skip the window -> world transform like in update_cursor()
                         gizmos.line_2d(
                             cursor_pos.translation.xy(),
                             cursor_pos.translation.xy() + avg_velocity,
-                            bevy::color::palettes::css::RED
+                            bevy::color::palettes::css::RED,
                         );
                     }
-                },
+                }
             }
-        },
+        }
     }
 }

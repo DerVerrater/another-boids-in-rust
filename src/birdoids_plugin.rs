@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_spatial::{
-    kdtree::KDTree2, AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode
+    kdtree::KDTree2, AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode,
 };
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
@@ -17,14 +17,17 @@ pub struct BoidsPlugin;
 
 impl Plugin for BoidsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins(AutomaticUpdate::<TrackedByKdTree>::new()
+        app.add_plugins(
+            AutomaticUpdate::<TrackedByKdTree>::new()
                 // .with_frequency(Duration::from_secs_f32(0.3))
                 .with_transform(TransformMode::GlobalTransform)
-                .with_spatial_ds(SpatialStructure::KDTree2))
-            .insert_resource(ClearColor(BACKGROUND_COLOR))
-            .add_systems(Startup, (spawn_camera, spawn_boids))
-            .add_systems(FixedUpdate, (
+                .with_spatial_ds(SpatialStructure::KDTree2),
+        )
+        .insert_resource(ClearColor(BACKGROUND_COLOR))
+        .add_systems(Startup, (spawn_camera, spawn_boids))
+        .add_systems(
+            FixedUpdate,
+            (
                 apply_velocity,
                 turn_if_edge,
                 check_keyboard,
@@ -32,7 +35,8 @@ impl Plugin for BoidsPlugin {
                 separation,
                 alignment,
                 // space_brakes,
-            ));
+            ),
+        );
     }
 }
 
@@ -144,7 +148,7 @@ fn turn_if_edge(
 
 fn apply_velocity(
     mut query: Query<(&mut Transform, &Velocity, &mut Acceleration)>,
-    time: Res<Time>
+    time: Res<Time>,
 ) {
     for (mut transform, velocity, mut acceleration) in &mut query {
         let delta_v = **acceleration * time.delta_seconds();
@@ -191,13 +195,8 @@ fn cohesion(
     // find vector from boid to flock CoM
     // apply force
     for (transform, mut acceleration) in &mut boids {
-        let neighbors = spatial_tree.within_distance(
-            transform.translation.xy(),
-            BOID_VIEW_RANGE
-        );
-        if let Some(center_mass) = center_of_boids(
-            neighbors.iter().map(|boid| boid.0 )
-        ) {
+        let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
+        if let Some(center_mass) = center_of_boids(neighbors.iter().map(|boid| boid.0)) {
             let towards = (center_mass.extend(0.0) - transform.translation).normalize();
             acceleration.0 += towards * COHESION_FACTOR;
         }
@@ -213,16 +212,15 @@ fn separation(
     // sum force from neighbors
     // apply force
     for (boid_transform, mut boid_acceleration) in &mut boids {
-        let neighbors = spatial_tree.within_distance(
-            boid_transform.translation.xy(),
-            BOID_VIEW_RANGE / 4.0,
-        );
-        let accel = neighbors.iter()
-            .map(|(pos, _)| pos.extend(0.0))
-            .fold(Vec3::ZERO, |accumulator, neighbor |{
+        let neighbors =
+            spatial_tree.within_distance(boid_transform.translation.xy(), BOID_VIEW_RANGE / 4.0);
+        let accel = neighbors.iter().map(|(pos, _)| pos.extend(0.0)).fold(
+            Vec3::ZERO,
+            |accumulator, neighbor| {
                 let force = separation_force(boid_transform.translation.xy(), neighbor.xy());
                 accumulator + *force
-            });
+            },
+        );
         boid_acceleration.0 += accel;
     }
 }
@@ -246,30 +244,28 @@ fn alignment(
     // apply steering force
 
     for (transform, velocity, mut acceleration) in &mut boids {
-        let neighbors = spatial_tree.within_distance(
-            transform.translation.xy(),
-            BOID_VIEW_RANGE,
-        );
+        let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         // averaging divides by length. Guard against an empty set of neighbors
         // so that we don't divide by zero.
         if neighbors.len() > 0 {
-            if let Some(avg_velocity) = velocity_of_boids(
-                neighbors.iter().map(|(vel, opt_entity)| {
+            if let Some(avg_velocity) =
+                velocity_of_boids(neighbors.iter().map(|(vel, opt_entity)| {
                     // I've observed no panics in the old version, nor the debug_plugins version
                     // I'm not clear on the conditions that cause a None option, but I want to
                     // crash when I find one.
                     let entity_id = opt_entity.unwrap_or_else(|| panic!("Boid has no Entity ID!"));
-                    let vel = boid_velocities.get(entity_id).unwrap_or_else(|_| panic!("Boid has no velocity!"));
+                    let vel = boid_velocities
+                        .get(entity_id)
+                        .unwrap_or_else(|_| panic!("Boid has no velocity!"));
                     (*vel).xy()
-                })
-            ) {
+                }))
+            {
                 let deviation = -velocity.0 + avg_velocity.extend(0.0);
                 acceleration.0 += deviation * ALIGNMENT_FACTOR;
             }
         }
     }
 }
-
 
 pub(crate) fn center_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
     average_of_vec2s(points)
@@ -285,20 +281,18 @@ fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
     // Passing the points as an iterator means we lose the length of the
     // list. The `.enumerate()` iterator reintroduces that count.
     let mut points = points.enumerate();
-    
+
     // Empty iterators have no points and so no center of mass.
     // Try to get the first one, but exit with None if it doesn't yield.
     let init = points.next()?;
-    
+
     // if we get one, fold all the remaining values into it.
-    let (len, sum) = points.fold(
-        init,
-        |(len, sum), (idx, point)| {
-            // replace length with most recent index
-            // add running sum & new point for new running sum
-            (idx, sum + point)
-        });
+    let (len, sum) = points.fold(init, |(len, sum), (idx, point)| {
+        // replace length with most recent index
+        // add running sum & new point for new running sum
+        (idx, sum + point)
+    });
     let avg = sum / ((len + 1) as f32);
-    
+
     Some(avg)
 }
