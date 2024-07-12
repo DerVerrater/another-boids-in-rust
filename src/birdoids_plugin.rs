@@ -1,4 +1,3 @@
-use std::time::Duration;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_spatial::{
