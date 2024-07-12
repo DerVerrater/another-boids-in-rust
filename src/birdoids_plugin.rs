@@ -11,6 +11,7 @@ const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 1000.0;
 const SEPARATION_FACTOR: f32 = 100.0;
 const ALIGNMENT_FACTOR: f32 = 500.0;
+const SPACEBRAKES_COEFFICIENT: f32 = 0.01;
 
 pub struct BoidsPlugin;
 
@@ -115,7 +116,7 @@ fn spawn_boids(
 
 fn space_brakes(mut mobs: Query<&mut Acceleration, With<Boid>>) {
     for mut accel in &mut mobs {
-        let braking_dir = -accel.0 * 0.01;
+        let braking_dir = -accel.0 * SPACEBRAKES_COEFFICIENT;
         accel.0 += braking_dir;
     }
 }
