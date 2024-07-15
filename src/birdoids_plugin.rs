@@ -198,7 +198,7 @@ fn cohesion(
         let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         if let Some(center_mass) = center_of_boids(neighbors.iter().map(|boid| boid.0)) {
             let force = cohesive_force(center_mass, transform.translation.xy());
-            acceleration.0 += force.extend(0.0) * COHESION_FACTOR;
+            acceleration.0 += *force * COHESION_FACTOR;
         }
     }
 }
@@ -298,7 +298,7 @@ fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
 }
 
 // f(x) = 4((x-0.5)^3 + 0.125)
-fn cohesive_force(boid: Vec2, target: Vec2) -> Vec2 {
+fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
     let deviation = target - boid;
     /*
     Scale deviation vector by the boid's view range. The curve is made to
@@ -307,5 +307,5 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Vec2 {
     let scaled = deviation / BOID_VIEW_RANGE;
     let half_one = Vec2::ONE / 2.0;
     let cube = (scaled - half_one).powf(3.0);
-    return (cube + 0.125) * 4.0;
+    Force(((cube + 0.125) * 4.0).extend(0.0))
 }
