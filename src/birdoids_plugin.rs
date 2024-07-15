@@ -299,9 +299,15 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
     operate on the range (0, 1), so that needs to be the viewing circle.
     */
     let scaled = deviation / BOID_VIEW_RANGE;
-    let half_one = Vec2::ONE / 2.0;
-    let cube = (scaled - half_one).powf(3.0);
-    Force(((cube + 0.125) * 4.0).extend(0.0))
+    let mag = scaled.length();
+    let cube: f32 = (mag - 0.5).powf(3.0);
+    let offset = cube + 0.125;
+    let mul = offset * 4.0;
+    // It's necessary to re-normalize the scaled vector here.
+    // This is because it needs to be a unit vector before getting a new
+    // magnitude assigned.
+    let force_vec = mul * scaled.normalize();
+    Force(force_vec.extend(0.0))
 }
 
 // f(x) = -x^2 + 1
