@@ -9,7 +9,7 @@ const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 1.0;
-const SEPARATION_FACTOR: f32 = 100.0;
+const SEPARATION_FACTOR: f32 = 1.0;
 const ALIGNMENT_FACTOR: f32 = 500.0;
 const SPACEBRAKES_COEFFICIENT: f32 = 0.01;
 
@@ -218,17 +218,19 @@ fn separation(
             Vec3::ZERO,
             |accumulator, neighbor| {
                 let force = separation_force(boid_transform.translation.xy(), neighbor.xy());
-                accumulator + *force
+                accumulator + *force * SEPARATION_FACTOR
             },
         );
         boid_acceleration.0 += accel;
     }
 }
 
-// TODO: Make this an exponential so force gets stronger faster as the points approach.
+// f(x) = -x^2 + 1
 fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
     let distance = neighbor - us;
-    Force(-(distance * SEPARATION_FACTOR).extend(0.0))
+    let scaled = distance / BOID_VIEW_RANGE;
+    let force_vec = -scaled.powf(2.0) + Vec2::ONE;
+    Force(force_vec.extend(0.0))
 }
 
 fn alignment(
