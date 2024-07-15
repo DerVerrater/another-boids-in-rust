@@ -311,9 +311,9 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
 }
 
 // f(x) = x^2 - 1
-fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
+fn separation_force(boid: Vec2, target: Vec2) -> Force {
     // Scale from BOID_VIEW_RANGE to unit space
-    let distance_unit = (neighbor - us) / BOID_VIEW_RANGE;
+    let distance_unit = (target - boid) / BOID_VIEW_RANGE;
     let mag = distance_unit.length();
     let force_mag = mag.powf(2.0) - 1.0;
     let force = force_mag * distance_unit.normalize();
