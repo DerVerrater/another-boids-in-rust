@@ -10,7 +10,7 @@ const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 1.0;
 const SEPARATION_FACTOR: f32 = 1.0;
-const ALIGNMENT_FACTOR: f32 = 500.0;
+const ALIGNMENT_FACTOR: f32 = 1.0;
 const SPACEBRAKES_COEFFICIENT: f32 = 0.01;
 
 pub struct BoidsPlugin;
@@ -51,7 +51,7 @@ struct PlayerBoid;
 #[derive(Component, Deref, DerefMut)]
 pub(crate) struct Velocity(Vec3);
 
-#[derive(Component, Deref, DerefMut)]
+#[derive(Component, Deref, DerefMut, PartialEq, Debug)]
 pub(crate) struct Force(Vec3);
 
 #[derive(Component)]
@@ -310,4 +310,225 @@ fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
     let scaled = distance / BOID_VIEW_RANGE;
     let force_vec = -scaled.powf(2.0) + Vec2::ONE;
     Force(force_vec.extend(0.0))
+}
+
+#[cfg(test)]
+mod tests{
+    use bevy::prelude::*;
+
+    use crate::birdoids_plugin::{
+        cohesive_force, separation_force
+    };
+
+    use super::{
+        BOID_VIEW_RANGE,
+        Force,
+    };
+
+    // forces are relative to the boid's view range, so all
+    // distances need to be fractions of that
+
+    #[test]
+    fn check_cohesion_zero_zero() {
+        todo!("Make test for cohesion_force when boid and target are at the same point")
+    }
+
+    // *********************
+    // Cohesion x-axis tests
+    // *********************
+
+    #[test]
+    fn check_cohesion_midpoint_x_positive(){
+        // Pull right 0.5 units
+        assert_eq!(
+            Force(Vec3::new(0.5, 0.0, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.5 * BOID_VIEW_RANGE, 0.0),
+            )
+        );
+    }
+
+    #[test]
+    fn check_cohesion_midpoint_x_negative(){
+        // Pull left 0.5 units
+        assert_eq!(
+            Force(Vec3::new(-0.5, 0.0, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(-0.5 * BOID_VIEW_RANGE, 0.0),
+            )
+        );
+    }
+
+    #[test]
+    fn check_cohesion_edge_x_positive() {
+        // pull left 1.0 units
+        assert_eq!(
+            Force(Vec3::new(1.0, 0.0, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0 * BOID_VIEW_RANGE, 0.0),    
+            )
+        );
+    }
+
+    #[test]
+    fn check_cohesion_edge_x_negative() {
+        // pull left 1.0 units
+        assert_eq!(
+            Force(Vec3::new(-1.0, 0.0, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(-1.0 * BOID_VIEW_RANGE, 0.0),    
+            )
+        );
+    }
+
+    // *********************
+    // Cohesion y-axis tests
+    // *********************
+
+    #[test]
+    fn check_cohesion_midpoint_y_positive(){
+        // Pull up 0.5 units
+        assert_eq!(
+            Force(Vec3::new(0.0, 0.5, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 0.5 * BOID_VIEW_RANGE),
+            )
+        );
+    }
+
+    #[test]
+    fn check_cohesion_midpoint_y_negative(){
+        // Pull down 0.5 units
+        assert_eq!(
+            Force(Vec3::new(0.0, -0.5, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, -0.5 * BOID_VIEW_RANGE),
+            )
+        );
+    }
+
+    #[test]
+    fn check_cohesion_edge_y_positive() {
+        // Pull up 1.0 units
+        assert_eq!(
+            Force(Vec3::new(0.0, 1.0, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 1.0 * BOID_VIEW_RANGE)
+            )
+        );
+    }
+
+    #[test]
+    fn check_cohesion_edge_y_negative() {
+        // pull down 0.2 units
+        assert_eq!(
+            Force(Vec3::new(0.0, -1.0, 0.0)),
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, -1.0 * BOID_VIEW_RANGE),
+            )
+        );
+    }
+
+    // *********************
+    // Separation x-axis tests
+    // *********************
+    #[test]
+    fn check_separation_midpoint_x_positive(){
+        assert_eq!(
+            Force(Vec3::new(0.75, 0.0, 0.0)),   // expected force
+            separation_force(
+                Vec2::new(0.5, 0.0),            // boid position
+                Vec2::ZERO,                     // obstacle position
+            )
+        );
+    }
+    
+    #[test]
+    fn check_separation_midpoint_x_negative(){
+        assert_eq!(
+            Force(Vec3::new(-0.75, 0.0, 0.0)),   // expected force
+            separation_force(
+                Vec2::new(-0.5, 0.0),            // boid position
+                Vec2::ZERO,                     // obstacle position
+            )
+        );
+    }
+    
+    #[test]
+    fn check_separation_edge_x_positive() {
+        assert_eq!(
+            Force(Vec3::ZERO),
+            separation_force(
+                Vec2::new(1.0, 0.0),
+                Vec2::ZERO,
+            ),
+        );
+    }
+
+    #[test]
+    fn check_separation_edge_x_negative() {
+        assert_eq!(
+            Force(Vec3::ZERO),
+            separation_force(
+                Vec2::new(-1.0, 0.0),
+                Vec2::ZERO,
+            ),
+        );
+    }
+
+    // *********************
+    // Separation y-axis tests
+    // *********************
+    #[test]
+    fn check_separation_midpoint_y_positive(){
+        assert_eq!(
+            Force(Vec3::new(0.0, 0.75, 0.0)),
+            separation_force(
+                Vec2::new(0.0, 0.5),
+                Vec2::ZERO,
+            )
+        );
+    }
+
+    #[test]
+    fn check_separation_midpoint_y_negative(){
+        assert_eq!(
+            Force(Vec3::new(0.0, -0.75, 0.0)),
+            separation_force(
+                Vec2::new(0.0, -0.5),
+                Vec2::ZERO,
+            )
+        );
+    }
+
+    #[test]
+    fn check_separation_edge_y_positive() {
+        assert_eq!(
+            Force(Vec3::ZERO),
+            separation_force(
+                Vec2::new(0.0, 1.0),
+                Vec2::ZERO,
+            )
+        )
+    }
+
+    #[test]
+    fn check_separation_edge_y_negative() {
+        assert_eq!(
+            Force(Vec3::ZERO),
+            separation_force(
+                Vec2::new(0.0, -1.0),
+                Vec2::ZERO,
+            )
+        )
+    }
+
 }
