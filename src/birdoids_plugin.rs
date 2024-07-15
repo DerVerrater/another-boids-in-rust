@@ -310,12 +310,14 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
     Force(force_vec.extend(0.0))
 }
 
-// f(x) = -x^2 + 1
+// f(x) = x^2 - 1
 fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
-    let distance = neighbor - us;
-    let scaled = distance / BOID_VIEW_RANGE;
-    let force_vec = -scaled.powf(2.0) + Vec2::ONE;
-    Force(force_vec.extend(0.0))
+    // Scale from BOID_VIEW_RANGE to unit space
+    let distance_unit = (neighbor - us) / BOID_VIEW_RANGE;
+    let mag = distance_unit.length();
+    let force_mag = mag.powf(2.0) - 1.0;
+    let force = force_mag * distance_unit.normalize();
+    Force(force.extend(0.0))
 }
 
 #[cfg(test)]
@@ -449,10 +451,10 @@ mod tests{
     #[test]
     fn check_separation_midpoint_x_positive(){
         assert_eq!(
-            Force(Vec3::new(0.75, 0.0, 0.0)),   // expected force
+            Force(Vec3::new(0.75, 0.0, 0.0)),           // expected force
             separation_force(
-                Vec2::new(0.5, 0.0),            // boid position
-                Vec2::ZERO,                     // obstacle position
+                Vec2::new(0.5 * BOID_VIEW_RANGE, 0.0),  // boid position
+                Vec2::ZERO,                             // obstacle position
             )
         );
     }
@@ -460,10 +462,10 @@ mod tests{
     #[test]
     fn check_separation_midpoint_x_negative(){
         assert_eq!(
-            Force(Vec3::new(-0.75, 0.0, 0.0)),   // expected force
+            Force(Vec3::new(-0.75, 0.0, 0.0)),          // expected force
             separation_force(
-                Vec2::new(-0.5, 0.0),            // boid position
-                Vec2::ZERO,                     // obstacle position
+                Vec2::new(-0.5 * BOID_VIEW_RANGE, 0.0), // boid position
+                Vec2::ZERO,                             // obstacle position
             )
         );
     }
@@ -473,7 +475,7 @@ mod tests{
         assert_eq!(
             Force(Vec3::ZERO),
             separation_force(
-                Vec2::new(1.0, 0.0),
+                Vec2::new(1.0 * BOID_VIEW_RANGE, 0.0),
                 Vec2::ZERO,
             ),
         );
@@ -484,7 +486,7 @@ mod tests{
         assert_eq!(
             Force(Vec3::ZERO),
             separation_force(
-                Vec2::new(-1.0, 0.0),
+                Vec2::new(-1.0 * BOID_VIEW_RANGE, 0.0),
                 Vec2::ZERO,
             ),
         );
@@ -498,7 +500,7 @@ mod tests{
         assert_eq!(
             Force(Vec3::new(0.0, 0.75, 0.0)),
             separation_force(
-                Vec2::new(0.0, 0.5),
+                Vec2::new(0.0, 0.5 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
             )
         );
@@ -509,7 +511,7 @@ mod tests{
         assert_eq!(
             Force(Vec3::new(0.0, -0.75, 0.0)),
             separation_force(
-                Vec2::new(0.0, -0.5),
+                Vec2::new(0.0, -0.5 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
             )
         );
@@ -520,7 +522,7 @@ mod tests{
         assert_eq!(
             Force(Vec3::ZERO),
             separation_force(
-                Vec2::new(0.0, 1.0),
+                Vec2::new(0.0, 1.0 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
             )
         )
@@ -531,10 +533,9 @@ mod tests{
         assert_eq!(
             Force(Vec3::ZERO),
             separation_force(
-                Vec2::new(0.0, -1.0),
+                Vec2::new(0.0, -1.0 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
             )
         )
     }
-
 }
