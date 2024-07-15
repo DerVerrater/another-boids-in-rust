@@ -225,14 +225,6 @@ fn separation(
     }
 }
 
-// f(x) = -x^2 + 1
-fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
-    let distance = neighbor - us;
-    let scaled = distance / BOID_VIEW_RANGE;
-    let force_vec = -scaled.powf(2.0) + Vec2::ONE;
-    Force(force_vec.extend(0.0))
-}
-
 fn alignment(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     mut boids: Query<(&Transform, &Velocity, &mut Force), With<Boid>>,
@@ -310,4 +302,12 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
     let half_one = Vec2::ONE / 2.0;
     let cube = (scaled - half_one).powf(3.0);
     Force(((cube + 0.125) * 4.0).extend(0.0))
+}
+
+// f(x) = -x^2 + 1
+fn separation_force(us: Vec2, neighbor: Vec2) -> Force {
+    let distance = neighbor - us;
+    let scaled = distance / BOID_VIEW_RANGE;
+    let force_vec = -scaled.powf(2.0) + Vec2::ONE;
+    Force(force_vec.extend(0.0))
 }
