@@ -445,6 +445,12 @@ mod tests{
         );
     }
 
+    // Separation 0,0 test
+    #[test]
+    fn check_separation_zero_zero() {
+        todo!("Check what happens when a boid is on top of the point it's trying to move away from");
+    }
+
     // *********************
     // Separation x-axis tests
     // *********************
