@@ -8,7 +8,7 @@ const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
-const COHESION_FACTOR: f32 = 1000.0;
+const COHESION_FACTOR: f32 = 1.0;
 const SEPARATION_FACTOR: f32 = 100.0;
 const ALIGNMENT_FACTOR: f32 = 500.0;
 const SPACEBRAKES_COEFFICIENT: f32 = 0.01;
@@ -197,8 +197,8 @@ fn cohesion(
     for (transform, mut acceleration) in &mut boids {
         let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         if let Some(center_mass) = center_of_boids(neighbors.iter().map(|boid| boid.0)) {
-            let towards = (center_mass.extend(0.0) - transform.translation).normalize();
-            acceleration.0 += towards * COHESION_FACTOR;
+            let force = cohesive_force(center_mass, transform.translation.xy());
+            acceleration.0 += force.extend(0.0) * COHESION_FACTOR;
         }
     }
 }
@@ -295,4 +295,17 @@ fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
     let avg = sum / ((len + 1) as f32);
 
     Some(avg)
+}
+
+// f(x) = 4((x-0.5)^3 + 0.125)
+fn cohesive_force(boid: Vec2, target: Vec2) -> Vec2 {
+    let deviation = target - boid;
+    /*
+    Scale deviation vector by the boid's view range. The curve is made to
+    operate on the range (0, 1), so that needs to be the viewing circle.
+    */
+    let scaled = deviation / BOID_VIEW_RANGE;
+    let half_one = Vec2::ONE / 2.0;
+    let cube = (scaled - half_one).powf(3.0);
+    return (cube + 0.125) * 4.0;
 }
