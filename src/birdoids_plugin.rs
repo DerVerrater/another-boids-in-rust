@@ -338,7 +338,9 @@ mod tests{
 
     #[test]
     fn check_cohesion_zero_zero() {
-        todo!("Make test for cohesion_force when boid and target are at the same point")
+        let force = cohesive_force(Vec2::ZERO, Vec2::ZERO);
+        eprintln!("Cohesive force of overlapping points: {}", *force);
+        panic!()
     }
 
     // *********************
@@ -448,7 +450,12 @@ mod tests{
     // Separation 0,0 test
     #[test]
     fn check_separation_zero_zero() {
-        todo!("Check what happens when a boid is on top of the point it's trying to move away from");
+        let force = separation_force(
+            Vec2::ZERO,
+            Vec2::ZERO
+        );
+        eprintln!("Separation force of overlapping points: {}", *force);
+        panic!()
     }
 
     // *********************
