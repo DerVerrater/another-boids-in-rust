@@ -2,7 +2,7 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::PrimaryWindow};
 use bevy_spatial::{kdtree::KDTree2, SpatialAccess};
 
 use crate::birdoids_plugin::{
-    center_of_boids, velocity_of_boids, Force, Boid, TrackedByKdTree, Velocity,
+    center_of_boids, velocity_of_boids, Boid, Force, TrackedByKdTree, Velocity,
 };
 
 const SCANRADIUS: f32 = 50.0;
