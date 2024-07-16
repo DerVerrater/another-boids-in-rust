@@ -51,7 +51,7 @@ struct PlayerBoid;
 #[derive(Component, Deref, DerefMut)]
 pub(crate) struct Velocity(Vec3);
 
-#[derive(Component, Deref, DerefMut, PartialEq, Debug)]
+#[derive(Component, Default, Deref, DerefMut, PartialEq, Debug)]
 pub(crate) struct Force(Vec3);
 
 #[derive(Component)]
@@ -197,7 +197,10 @@ fn cohesion(
     for (transform, mut acceleration) in &mut boids {
         let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         if let Some(center_mass) = center_of_boids(neighbors.iter().map(|boid| boid.0)) {
-            let force = cohesive_force(center_mass, transform.translation.xy());
+            let force = cohesive_force(
+                center_mass,
+                transform.translation.xy()
+            ).unwrap_or_default();
             acceleration.0 += *force * COHESION_FACTOR;
         }
     }
@@ -217,7 +220,10 @@ fn separation(
         let accel = neighbors.iter().map(|(pos, _)| pos.extend(0.0)).fold(
             Vec3::ZERO,
             |accumulator, neighbor| {
-                let force = separation_force(boid_transform.translation.xy(), neighbor.xy());
+                let force = separation_force(
+                    boid_transform.translation.xy(),
+                    neighbor.xy()
+                ).unwrap_or_default();
                 accumulator + *force * SEPARATION_FACTOR
             },
         );
@@ -292,7 +298,7 @@ fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
 }
 
 // f(x) = 4((x-0.5)^3 + 0.125)
-fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
+fn cohesive_force(boid: Vec2, target: Vec2) -> Option<Force> {
     let deviation = target - boid;
     /*
     Scale deviation vector by the boid's view range. The curve is made to
@@ -300,24 +306,32 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Force {
     */
     let scaled = deviation / BOID_VIEW_RANGE;
     let mag = scaled.length();
-    let cube: f32 = (mag - 0.5).powf(3.0);
-    let offset = cube + 0.125;
-    let mul = offset * 4.0;
-    // It's necessary to re-normalize the scaled vector here.
-    // This is because it needs to be a unit vector before getting a new
-    // magnitude assigned.
-    let force_vec = mul * scaled.normalize();
-    Force(force_vec.extend(0.0))
+    if mag > 0.0 {
+        let cube: f32 = (mag - 0.5).powf(3.0);
+        let offset = cube + 0.125;
+        let mul = offset * 4.0;
+        // It's necessary to re-normalize the scaled vector here.
+        // This is because it needs to be a unit vector before getting a new
+        // magnitude assigned.
+        let force_vec = mul * scaled.normalize();
+        Some(Force(force_vec.extend(0.0)))
+    } else {
+        None
+    }
 }
 
 // f(x) = x^2 - 1
-fn separation_force(boid: Vec2, target: Vec2) -> Force {
+fn separation_force(boid: Vec2, target: Vec2) -> Option<Force> {
     // Scale from BOID_VIEW_RANGE to unit space
     let distance_unit = (target - boid) / BOID_VIEW_RANGE;
     let mag = distance_unit.length();
-    let force_mag = mag.powf(2.0) - 1.0;
-    let force = force_mag * distance_unit.normalize();
-    Force(force.extend(0.0))
+    if mag > 0.0 {
+        let force_mag = mag.powf(2.0) - 1.0;
+        let force = force_mag * distance_unit.normalize();
+        Some(Force(force.extend(0.0)))
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -339,8 +353,7 @@ mod tests{
     #[test]
     fn check_cohesion_zero_zero() {
         let force = cohesive_force(Vec2::ZERO, Vec2::ZERO);
-        eprintln!("Cohesive force of overlapping points: {}", *force);
-        panic!()
+        assert!(force.is_none());
     }
 
     // *********************
@@ -351,7 +364,7 @@ mod tests{
     fn check_cohesion_midpoint_x_positive(){
         // Pull right 0.5 units
         assert_eq!(
-            Force(Vec3::new(0.5, 0.0, 0.0)),
+            Some(Force(Vec3::new(0.5, 0.0, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(0.5 * BOID_VIEW_RANGE, 0.0),
@@ -363,7 +376,7 @@ mod tests{
     fn check_cohesion_midpoint_x_negative(){
         // Pull left 0.5 units
         assert_eq!(
-            Force(Vec3::new(-0.5, 0.0, 0.0)),
+            Some(Force(Vec3::new(-0.5, 0.0, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(-0.5 * BOID_VIEW_RANGE, 0.0),
@@ -375,7 +388,7 @@ mod tests{
     fn check_cohesion_edge_x_positive() {
         // pull left 1.0 units
         assert_eq!(
-            Force(Vec3::new(1.0, 0.0, 0.0)),
+            Some(Force(Vec3::new(1.0, 0.0, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(1.0 * BOID_VIEW_RANGE, 0.0),    
@@ -387,7 +400,7 @@ mod tests{
     fn check_cohesion_edge_x_negative() {
         // pull left 1.0 units
         assert_eq!(
-            Force(Vec3::new(-1.0, 0.0, 0.0)),
+            Some(Force(Vec3::new(-1.0, 0.0, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(-1.0 * BOID_VIEW_RANGE, 0.0),    
@@ -403,7 +416,7 @@ mod tests{
     fn check_cohesion_midpoint_y_positive(){
         // Pull up 0.5 units
         assert_eq!(
-            Force(Vec3::new(0.0, 0.5, 0.0)),
+            Some(Force(Vec3::new(0.0, 0.5, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(0.0, 0.5 * BOID_VIEW_RANGE),
@@ -415,7 +428,7 @@ mod tests{
     fn check_cohesion_midpoint_y_negative(){
         // Pull down 0.5 units
         assert_eq!(
-            Force(Vec3::new(0.0, -0.5, 0.0)),
+            Some(Force(Vec3::new(0.0, -0.5, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(0.0, -0.5 * BOID_VIEW_RANGE),
@@ -427,7 +440,7 @@ mod tests{
     fn check_cohesion_edge_y_positive() {
         // Pull up 1.0 units
         assert_eq!(
-            Force(Vec3::new(0.0, 1.0, 0.0)),
+            Some(Force(Vec3::new(0.0, 1.0, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(0.0, 1.0 * BOID_VIEW_RANGE)
@@ -439,7 +452,7 @@ mod tests{
     fn check_cohesion_edge_y_negative() {
         // pull down 0.2 units
         assert_eq!(
-            Force(Vec3::new(0.0, -1.0, 0.0)),
+            Some(Force(Vec3::new(0.0, -1.0, 0.0))),
             cohesive_force(
                 Vec2::new(0.0, 0.0),
                 Vec2::new(0.0, -1.0 * BOID_VIEW_RANGE),
@@ -454,8 +467,7 @@ mod tests{
             Vec2::ZERO,
             Vec2::ZERO
         );
-        eprintln!("Separation force of overlapping points: {}", *force);
-        panic!()
+        assert!(force.is_none());
     }
 
     // *********************
@@ -464,7 +476,7 @@ mod tests{
     #[test]
     fn check_separation_midpoint_x_positive(){
         assert_eq!(
-            Force(Vec3::new(0.75, 0.0, 0.0)),           // expected force
+            Some(Force(Vec3::new(0.75, 0.0, 0.0))),           // expected force
             separation_force(
                 Vec2::new(0.5 * BOID_VIEW_RANGE, 0.0),  // boid position
                 Vec2::ZERO,                             // obstacle position
@@ -475,7 +487,7 @@ mod tests{
     #[test]
     fn check_separation_midpoint_x_negative(){
         assert_eq!(
-            Force(Vec3::new(-0.75, 0.0, 0.0)),          // expected force
+            Some(Force(Vec3::new(-0.75, 0.0, 0.0))),          // expected force
             separation_force(
                 Vec2::new(-0.5 * BOID_VIEW_RANGE, 0.0), // boid position
                 Vec2::ZERO,                             // obstacle position
@@ -486,7 +498,7 @@ mod tests{
     #[test]
     fn check_separation_edge_x_positive() {
         assert_eq!(
-            Force(Vec3::ZERO),
+            Some(Force(Vec3::ZERO)),
             separation_force(
                 Vec2::new(1.0 * BOID_VIEW_RANGE, 0.0),
                 Vec2::ZERO,
@@ -497,7 +509,7 @@ mod tests{
     #[test]
     fn check_separation_edge_x_negative() {
         assert_eq!(
-            Force(Vec3::ZERO),
+            Some(Force(Vec3::ZERO)),
             separation_force(
                 Vec2::new(-1.0 * BOID_VIEW_RANGE, 0.0),
                 Vec2::ZERO,
@@ -511,7 +523,7 @@ mod tests{
     #[test]
     fn check_separation_midpoint_y_positive(){
         assert_eq!(
-            Force(Vec3::new(0.0, 0.75, 0.0)),
+            Some(Force(Vec3::new(0.0, 0.75, 0.0))),
             separation_force(
                 Vec2::new(0.0, 0.5 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
@@ -522,7 +534,7 @@ mod tests{
     #[test]
     fn check_separation_midpoint_y_negative(){
         assert_eq!(
-            Force(Vec3::new(0.0, -0.75, 0.0)),
+            Some(Force(Vec3::new(0.0, -0.75, 0.0))),
             separation_force(
                 Vec2::new(0.0, -0.5 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
@@ -533,7 +545,7 @@ mod tests{
     #[test]
     fn check_separation_edge_y_positive() {
         assert_eq!(
-            Force(Vec3::ZERO),
+            Some(Force(Vec3::ZERO)),
             separation_force(
                 Vec2::new(0.0, 1.0 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
@@ -544,7 +556,7 @@ mod tests{
     #[test]
     fn check_separation_edge_y_negative() {
         assert_eq!(
-            Force(Vec3::ZERO),
+            Some(Force(Vec3::ZERO)),
             separation_force(
                 Vec2::new(0.0, -1.0 * BOID_VIEW_RANGE),
                 Vec2::ZERO,
