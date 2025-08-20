@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
-mod birdoids_plugin;
+mod birdoids;
 mod debug_plugin;
 
-use birdoids_plugin::BoidsPlugin;
+use birdoids::BoidsPlugin;
 use debug_plugin::BoidsDebugPlugin;
 
 fn main() {

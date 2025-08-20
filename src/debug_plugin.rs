@@ -1,7 +1,7 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_spatial::{kdtree::KDTree2, SpatialAccess};
 
-use crate::birdoids_plugin::{
+use crate::birdoids::{
     center_of_boids, velocity_of_boids, Boid, Force, TrackedByKdTree, Velocity,
 };
 

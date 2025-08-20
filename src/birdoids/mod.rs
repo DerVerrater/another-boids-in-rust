@@ -322,7 +322,7 @@ fn separation_force(boid: Vec2, target: Vec2) -> Option<Force> {
 mod tests {
     use bevy::prelude::*;
 
-    use crate::birdoids_plugin::{cohesive_force, separation_force};
+    use crate::birdoids::{cohesive_force, separation_force};
 
     use super::{Force, BOID_VIEW_RANGE};
 
