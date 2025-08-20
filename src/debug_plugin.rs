@@ -66,8 +66,8 @@ fn update_cursor(
 ) {
     // I'm trusting that only one thing has the `Cursor` component
     // It's defined here in this module, so that *should* be the case...
-    let win = window.get_single().unwrap();
-    let (cam, cam_transform) = camera.get_single().unwrap();
+    let win = window.single().unwrap();
+    let (cam, cam_transform) = camera.single().unwrap();
     // the cursor might not be on the window. Only adjust position when it is.
     if let Some(cursor_pos_in_window) = win.cursor_position() {
         // transform the window position into world space
@@ -76,7 +76,7 @@ fn update_cursor(
         let cursor_in_world = cam
             .viewport_to_world_2d(cam_transform, cursor_pos_in_window)
             .unwrap();
-        let mut cursor = cursor_query.get_single_mut().unwrap();
+        let mut cursor = cursor_query.single_mut().unwrap();
         cursor.translation = cursor_in_world.extend(0.0);
     }
 }
@@ -89,7 +89,7 @@ fn update_scanner_mode(
     mut scanner_query: Query<(&mut SelectionMode, &mut ScannerMode), With<Cursor>>,
 ) {
     // I'm making another assertion that there is exactly one scanner.
-    let (mut select_mode, mut scan_mode) = scanner_query.get_single_mut().unwrap();
+    let (mut select_mode, mut scan_mode) = scanner_query.single_mut().unwrap();
 
     // Assign selection mode
     if keycodes.just_pressed(KeyCode::Digit1) {
@@ -107,7 +107,7 @@ fn update_scanner_mode(
 }
 
 fn print_gizmo_config(query: Query<(&SelectionMode, &ScannerMode), With<Cursor>>) {
-    let (select, scan) = query.get_single().unwrap();
+    let (select, scan) = query.single().unwrap();
     println!("Selection: {select:?}, Scanning: {scan:?}");
 }
 
@@ -118,7 +118,7 @@ fn do_scan(
     /* Push info to summary somewhere */
     mut gizmos: Gizmos,
 ) {
-    let (cursor_pos, select_mode, scan_mode) = scanner_query.get_single().unwrap();
+    let (cursor_pos, select_mode, scan_mode) = scanner_query.single().unwrap();
     match select_mode {
         SelectionMode::NearestSingle => todo!(),
         SelectionMode::CircularArea => {

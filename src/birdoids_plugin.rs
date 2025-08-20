@@ -171,7 +171,7 @@ fn check_keyboard(
         dir.y += 1.0;
     }
 
-    **pvelocity = **pvelocity + dir.extend(0.0);
+    **pvelocity += dir.extend(0.0);
 }
 
 fn cohesion(
@@ -231,7 +231,7 @@ fn alignment(
         let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         // averaging divides by length. Guard against an empty set of neighbors
         // so that we don't divide by zero.
-        if neighbors.len() > 0 {
+        if !neighbors.is_empty() {
             if let Some(avg_velocity) =
                 velocity_of_boids(neighbors.iter().map(|(vel, opt_entity)| {
                     // I've observed no panics in the old version, nor the debug_plugins version
