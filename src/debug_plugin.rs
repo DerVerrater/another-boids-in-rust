@@ -22,9 +22,7 @@ fn setup(
 ) {
     commands.spawn((
         ScannerWidget::default(),
-        Mesh2d(meshes
-                .add(Annulus::new(SCANRADIUS - 1.0, SCANRADIUS))
-        ),
+        Mesh2d(meshes.add(Annulus::new(SCANRADIUS - 1.0, SCANRADIUS))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 0.0, 0.0))),
     ));
 }
