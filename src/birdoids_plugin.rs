@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::prelude::*;
 use bevy_spatial::{
     kdtree::KDTree2, AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode,
 };
@@ -76,7 +76,7 @@ impl BoidBundle {
 }
 
 fn spawn_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 }
 
 fn spawn_boids(
@@ -90,26 +90,17 @@ fn spawn_boids(
         let vel = Vec3::new(frac.cos() * 1.0, frac.sin() * 1.0, 0.0) * 10.0;
         commands.spawn((
             BoidBundle::new(vel),
-            MaterialMesh2dBundle {
-                mesh: meshes.add(Circle::default()).into(),
-                material: materials.add(Color::srgb(1.0, 1.0, 1.0)),
-                transform: Transform {
-                    translation: vel * 20.0,
-                    ..default()
-                },
-                ..default()
-            },
+            Mesh2d(meshes.add(Circle::default())),
+            MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 1.0))),
+            Transform::from_translation(vel * 20.0),
         ));
     }
 
     commands.spawn((
         BoidBundle::new(Vec3::new(0.0, 0.0, 0.0)),
         PlayerBoid,
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Triangle2d::default()).into(),
-            material: materials.add(PLAYERBOID_COLOR),
-            ..default()
-        },
+        Mesh2d(meshes.add(Triangle2d::default())),
+        MeshMaterial2d(materials.add(PLAYERBOID_COLOR)),
     ));
 }
 
@@ -124,7 +115,7 @@ fn turn_if_edge(
     mut query: Query<(&mut Transform, &mut Velocity), With<Boid>>,
     window: Query<&Window>,
 ) {
-    if let Ok(window) = window.get_single() {
+    if let Ok(window) = window.single() {
         let (width, height) = (window.resolution.width(), window.resolution.height());
         for (transform, mut velocity) in &mut query {
             let boid_pos = transform.translation.xy();
@@ -147,9 +138,9 @@ fn turn_if_edge(
 
 fn apply_velocity(mut query: Query<(&mut Transform, &Velocity, &mut Force)>, time: Res<Time>) {
     for (mut transform, velocity, mut acceleration) in &mut query {
-        let delta_v = **acceleration * time.delta_seconds();
+        let delta_v = **acceleration * time.delta_secs();
         **acceleration = Vec3::ZERO;
-        let delta_position = (**velocity + delta_v) * time.delta_seconds();
+        let delta_position = (**velocity + delta_v) * time.delta_secs();
         transform.translation += delta_position;
     }
 }
@@ -163,7 +154,9 @@ fn check_keyboard(
         app_exit_events.send(bevy::app::AppExit::Success);
     }
 
-    let mut pvelocity = query.single_mut();
+    let mut pvelocity = query
+        .single_mut()
+        .expect("[birdoids_plugin::check_keyboard()] ->> There seems to be more than one player... How did that happen?");
     let mut dir = Vec2::ZERO;
     if keyboard_input.pressed(KeyCode::ArrowLeft) {
         dir.x -= 1.0;

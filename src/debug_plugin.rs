@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_spatial::{kdtree::KDTree2, SpatialAccess};
 
 use crate::birdoids_plugin::{
@@ -22,13 +22,10 @@ fn setup(
 ) {
     commands.spawn((
         ScannerWidget::default(),
-        MaterialMesh2dBundle {
-            mesh: meshes
+        Mesh2d(meshes
                 .add(Annulus::new(SCANRADIUS - 1.0, SCANRADIUS))
-                .into(),
-            material: materials.add(Color::srgb(0.0, 0.0, 0.0)),
-            ..default()
-        },
+        ),
+        MeshMaterial2d(materials.add(Color::srgb(0.0, 0.0, 0.0))),
     ));
 }
 
