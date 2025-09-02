@@ -189,7 +189,7 @@ fn separation(
 
 fn alignment(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &mut Force), With<Boid>>,
+    mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
     boid_velocities: Query<&Velocity, With<Boid>>,
 ) {
     // for each boid
@@ -199,17 +199,21 @@ fn alignment(
     //      perpendicular so that magnitude is constant
     // apply steering force
 
-    for (transform, mut force) in &mut boids {
+    for (this_entt, transform, mut force) in &mut boids {
         let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         // averaging divides by length. Guard against an empty set of neighbors
         let (len, sum) = neighbors
             .iter()
             // Extract the velocities by `get()`ing from another query param.
-            .map(|(_pos, maybe_entt)| {
+            .filter_map(|(_pos, maybe_entt)| {
                 let entt = maybe_entt
                     .expect("Neighbor boid has no Entity ID. I don't know what this means");
+                if this_entt == entt {
+                    None
+                } else {
                 let vel = boid_velocities.get(entt).expect("Boid has no velocity!");
-                vel.xy()
+                    Some(vel.xy())
+                }
             })
             .enumerate()
             .fold((0, Vec2::ZERO), |(_len, vel_acc), (idx, vel)| {
