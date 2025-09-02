@@ -120,13 +120,13 @@ fn turn_if_edge(
 fn check_keyboard(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
-    mut query: Query<&mut Velocity, With<PlayerBoid>>,
+    mut query: Query<&mut Force, With<PlayerBoid>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::KeyQ) {
         app_exit_events.send(bevy::app::AppExit::Success);
     }
 
-    let mut pvelocity = query
+    let mut impulse = query
         .single_mut()
         .expect("[birdoids_plugin::check_keyboard()] ->> There seems to be more than one player... How did that happen?");
     let mut dir = Vec2::ZERO;
@@ -143,7 +143,7 @@ fn check_keyboard(
         dir.y += 1.0;
     }
 
-    **pvelocity += dir.extend(0.0);
+    **impulse += dir.extend(0.0) * 50.0;
 }
 
 fn cohesion(
