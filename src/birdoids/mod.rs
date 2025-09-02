@@ -13,7 +13,7 @@ const TURN_FACTOR: f32 = 1.0;
 const BOID_VIEW_RANGE: f32 = 50.0;
 const COHESION_FACTOR: f32 = 1.0;
 const SEPARATION_FACTOR: f32 = 1.0;
-const ALIGNMENT_FACTOR: f32 = 1.0;
+const ALIGNMENT_FACTOR: f32 = 10.0;
 const SPACEBRAKES_COEFFICIENT: f32 = 0.01;
 
 pub struct BoidsPlugin;
@@ -206,7 +206,7 @@ fn separation(
 
 fn alignment(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &Velocity, &mut Force), With<Boid>>,
+    mut boids: Query<(&Transform, &mut Force), With<Boid>>,
     boid_velocities: Query<&Velocity, With<Boid>>,
 ) {
     // for each boid
@@ -216,27 +216,31 @@ fn alignment(
     //      perpendicular so that magnitude is constant
     // apply steering force
 
-    for (transform, velocity, mut acceleration) in &mut boids {
+    for (transform, mut force) in &mut boids {
         let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
         // averaging divides by length. Guard against an empty set of neighbors
-        // so that we don't divide by zero.
-        if !neighbors.is_empty() {
-            if let Some(avg_velocity) =
-                velocity_of_boids(neighbors.iter().map(|(vel, opt_entity)| {
-                    // I've observed no panics in the old version, nor the debug_plugins version
-                    // I'm not clear on the conditions that cause a None option, but I want to
-                    // crash when I find one.
-                    let entity_id = opt_entity.unwrap_or_else(|| panic!("Boid has no Entity ID!"));
-                    let vel = boid_velocities
-                        .get(entity_id)
-                        .unwrap_or_else(|_| panic!("Boid has no velocity!"));
-                    (*vel).xy()
-                }))
-            {
-                let deviation = -velocity.0 + avg_velocity.extend(0.0);
-                acceleration.0 += deviation * ALIGNMENT_FACTOR;
-            }
-        }
+        let (len, sum) = neighbors
+            .iter()
+            // Extract the velocities by `get()`ing from another query param.
+            .map(|(_pos, maybe_entt)| {
+                let entt = maybe_entt
+                    .expect("Neighbor boid has no Entity ID. I don't know what this means");
+                let vel = boid_velocities.get(entt).expect("Boid has no velocity!");
+                vel.xy()
+            })
+            .enumerate()
+            .fold((0, Vec2::ZERO), |(_len, vel_acc), (idx, vel)| {
+                (idx, vel_acc + vel)
+            });
+
+        // Skip to next boid if the current one has no neighbors.
+        let avg = if len > 0 {
+            sum / (len as f32)
+        } else {
+            continue;
+        };
+
+        force.0 = (avg.extend(0.0) - force.0) * ALIGNMENT_FACTOR;
     }
 }
 
@@ -249,22 +253,13 @@ pub(crate) fn velocity_of_boids(points: impl Iterator<Item = Vec2>) -> Option<Ve
 }
 
 fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
-    // Average the points by summing them all together, and dividing by
-    // the total count.
-    // Passing the points as an iterator means we lose the length of the
-    // list. The `.enumerate()` iterator reintroduces that count.
-    let mut points = points.enumerate();
-
-    // Empty iterators have no points and so no center of mass.
-    // Try to get the first one, but exit with None if it doesn't yield.
-    let init = points.next()?;
-
-    // if we get one, fold all the remaining values into it.
-    let (len, sum) = points.fold(init, |(len, sum), (idx, point)| {
-        // replace length with most recent index
-        // add running sum & new point for new running sum
-        (idx, sum + point)
-    });
+    let (len, sum) = points
+        .enumerate()
+        .fold((0, Vec2::ZERO), |(_len, sum), (idx, point)| {
+            // replace length with most recent index
+            // add running sum & new point for new running sum
+            (idx, sum + point)
+        });
     let avg = sum / ((len + 1) as f32);
 
     Some(avg)
