@@ -1,7 +1,11 @@
+pub mod physics;
+
 use bevy::prelude::*;
 use bevy_spatial::{
     kdtree::KDTree2, AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode,
 };
+
+use crate::birdoids::physics::{apply_velocity, Force, Velocity};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
@@ -47,14 +51,8 @@ pub(crate) struct Boid;
 #[derive(Component)]
 struct PlayerBoid;
 
-#[derive(Component, Deref, DerefMut)]
-pub(crate) struct Velocity(Vec3);
-
-#[derive(Component, Default, Deref, DerefMut, PartialEq, Debug)]
-pub(crate) struct Force(Vec3);
-
 #[derive(Component)]
-pub(crate) struct TrackedByKdTree;
+pub struct TrackedByKdTree;
 
 #[derive(Bundle)]
 struct BoidBundle {
@@ -133,15 +131,6 @@ fn turn_if_edge(
         }
     } else {
         panic!("System turn_if_edge(...) got an Err(_) when getting the window properties");
-    }
-}
-
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity, &mut Force)>, time: Res<Time>) {
-    for (mut transform, velocity, mut acceleration) in &mut query {
-        let delta_v = **acceleration * time.delta_secs();
-        **acceleration = Vec3::ZERO;
-        let delta_position = (**velocity + delta_v) * time.delta_secs();
-        transform.translation += delta_position;
     }
 }
 
@@ -324,7 +313,7 @@ mod tests {
 
     use crate::birdoids::{cohesive_force, separation_force};
 
-    use super::{Force, BOID_VIEW_RANGE};
+    use super::{physics::Force, BOID_VIEW_RANGE};
 
     // forces are relative to the boid's view range, so all
     // distances need to be fractions of that
