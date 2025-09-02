@@ -44,6 +44,7 @@ impl Plugin for BoidsPlugin {
 }
 
 #[derive(Component)]
+#[require(Velocity, Force, TrackedByKdTree)]
 pub(crate) struct Boid;
 
 // It's a Boid, but with an extra component so the player
@@ -51,27 +52,8 @@ pub(crate) struct Boid;
 #[derive(Component)]
 struct PlayerBoid;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct TrackedByKdTree;
-
-#[derive(Bundle)]
-struct BoidBundle {
-    boid: Boid,
-    velocity: Velocity,
-    accel: Force,
-    spatial: TrackedByKdTree,
-}
-
-impl BoidBundle {
-    fn new(vel: Vec3) -> Self {
-        Self {
-            boid: Boid,
-            velocity: Velocity(vel),
-            accel: Force(Vec3::ZERO),
-            spatial: TrackedByKdTree,
-        }
-    }
-}
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -87,15 +69,16 @@ fn spawn_boids(
         let frac = 2.0 * std::f32::consts::PI / (num_boids as f32) * (i as f32);
         let vel = Vec3::new(frac.cos() * 1.0, frac.sin() * 1.0, 0.0) * 10.0;
         commands.spawn((
-            BoidBundle::new(vel),
-            Mesh2d(meshes.add(Circle::default())),
+            Boid,
+            Velocity(vel),
+            Mesh2d(meshes.add(Circle::new(1.0))),
             MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 1.0))),
             Transform::from_translation(vel * 20.0),
         ));
     }
 
     commands.spawn((
-        BoidBundle::new(Vec3::new(0.0, 0.0, 0.0)),
+        Boid,
         PlayerBoid,
         Mesh2d(meshes.add(Triangle2d::default())),
         MeshMaterial2d(materials.add(PLAYERBOID_COLOR)),
