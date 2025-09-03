@@ -166,24 +166,32 @@ fn cohesion(
 
 fn separation(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &mut Force), With<Boid>>,
+    mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
 ) {
     // for each boid
     // find neighbors
     // sum force from neighbors
     // apply force
-    for (boid_transform, mut boid_acceleration) in &mut boids {
-        let neighbors =
-            spatial_tree.within_distance(boid_transform.translation.xy(), BOID_VIEW_RANGE / 4.0);
-        let accel = neighbors.iter().map(|(pos, _)| pos.extend(0.0)).fold(
-            Vec3::ZERO,
-            |accumulator, neighbor| {
-                let force = separation_force(boid_transform.translation.xy(), neighbor.xy())
-                    .unwrap_or_default();
-                accumulator + *force * SEPARATION_FACTOR
-            },
-        );
-        boid_acceleration.0 += accel;
+    for (this_entt, tsfm, mut force) in &mut boids {
+        let impulse = spatial_tree
+            .within_distance(tsfm.translation.xy(), BOID_VIEW_RANGE / 8.0)
+            .iter()
+            .filter_map(|(pos, entt)| {
+                // Skip self-comparison. A boid should not try to separate from itself.
+                let entt = entt
+                    .expect("within_distance gave me an entity... with no entity ID... somehow");
+                if this_entt == entt {
+                    None
+                } else {
+                    Some(pos.extend(0.0))
+                }
+            })
+            .fold(Vec3::ZERO, |acc, other| {
+                // let force = tsfm.translation - other;
+                let force = separation_force(tsfm.translation.xy(), other.xy()).expect("angy");
+                acc + force.0
+            });
+        force.0 += impulse * SEPARATION_FACTOR;
     }
 }
 
