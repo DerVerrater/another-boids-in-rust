@@ -148,19 +148,40 @@ fn check_keyboard(
 
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
-    mut boids: Query<(&Transform, &mut Force), With<Boid>>,
+    mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
 ) {
     // for each boid
     // find neighbors
     // find center-of-mass of neighbors
     // find vector from boid to flock CoM
     // apply force
-    for (transform, mut acceleration) in &mut boids {
-        let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
-        if let Some(center_mass) = center_of_boids(neighbors.iter().map(|boid| boid.0)) {
-            let force = cohesive_force(center_mass, transform.translation.xy()).unwrap_or_default();
-            acceleration.0 += *force * COHESION_FACTOR;
-        }
+    for (this_entt, transform, mut force) in &mut boids {
+        let (len, sum) = spatial_tree
+            .within_distance(transform.translation.xy(), BOID_VIEW_RANGE)
+            .iter()
+            .filter_map(|(pos, entt)| {
+                // Skip self-comparison. A boid should not try to separate from itself.
+                let entt = entt
+                    .expect("within_distance gave me an entity... with no entity ID... somehow");
+                if this_entt == entt {
+                    None
+                } else {
+                    Some(pos)
+                }
+            })
+            .enumerate()
+            .fold((0, Vec2::ZERO), |(_len, com), (idx, pos)| (idx, com + pos));
+
+        // Skip to next boid if the current one has no neighbors.
+        let center_of_mass = if len > 0 {
+            sum / ((len + 1) as f32)
+        } else {
+            continue;
+        };
+
+        let impulse = cohesive_force(center_of_mass, transform.translation.xy()).expect("damn");
+
+        force.0 -= impulse.0 * COHESION_FACTOR;
     }
 }
 
