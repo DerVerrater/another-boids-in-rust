@@ -45,6 +45,8 @@ strip = "symbols"
 panic = "abort"
 
 [profile.wasm-release]
+codegen-units = 1
 inherits = "release"
+lto = "fat"
 opt-level = "z"
-strip = "debuginfo"
+strip = "symbols"
