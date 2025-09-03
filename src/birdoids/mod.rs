@@ -251,7 +251,7 @@ fn alignment(
 
         // Skip to next boid if the current one has no neighbors.
         let avg = if len > 0 {
-            sum / (len as f32)
+            sum / ((len + 1) as f32)
         } else {
             continue;
         };
