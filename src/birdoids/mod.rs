@@ -10,11 +10,13 @@ use crate::birdoids::physics::{apply_velocity, Force, Velocity};
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.0;
-const BOID_VIEW_RANGE: f32 = 50.0;
+const BOID_VIEW_RANGE: f32 = 15.0;
 const COHESION_FACTOR: f32 = 1.0;
-const SEPARATION_FACTOR: f32 = 1.0;
-const ALIGNMENT_FACTOR: f32 = 10.0;
-const SPACEBRAKES_COEFFICIENT: f32 = 0.01;
+const SEPARATION_FACTOR: f32 = 10.0;
+const ALIGNMENT_FACTOR: f32 = 1.0;
+const SPACEBRAKES_COEFFICIENT: f32 = 0.5;
+const LOW_SPEED_THRESHOLD: f32 = 50.0;
+const HIGH_SPEED_THRESHOLD: f32 = 200.0;
 
 pub struct BoidsPlugin;
 
@@ -37,7 +39,7 @@ impl Plugin for BoidsPlugin {
                 cohesion,
                 separation,
                 alignment,
-                // space_brakes,
+                speed_controller,
             ),
         );
     }
@@ -85,10 +87,16 @@ fn spawn_boids(
     ));
 }
 
-fn space_brakes(mut mobs: Query<&mut Force, With<Boid>>) {
-    for mut accel in &mut mobs {
-        let braking_dir = -accel.0 * SPACEBRAKES_COEFFICIENT;
-        accel.0 += braking_dir;
+/// Controls the boid's minimum and maximum speed according to a low- and
+/// high-threshold. Boids moving too slow are sped up, and boids moving too
+/// fast are slowed down.
+fn speed_controller(mut mobs: Query<(&Velocity, &mut Force), With<Boid>>) {
+    for (vel, mut impulse) in &mut mobs {
+        if vel.0.length() < LOW_SPEED_THRESHOLD {
+            impulse.0 += vel.0 * SPACEBRAKES_COEFFICIENT;
+        } else if vel.0.length() > HIGH_SPEED_THRESHOLD {
+            impulse.0 += -vel.0 * SPACEBRAKES_COEFFICIENT;
+        }
     }
 }
 
