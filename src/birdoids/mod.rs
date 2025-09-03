@@ -203,7 +203,7 @@ fn separation(
     // apply force
     for (this_entt, tsfm, mut force) in &mut boids {
         let impulse = spatial_tree
-            .within_distance(tsfm.translation.xy(), BOID_VIEW_RANGE / 8.0)
+            .within_distance(tsfm.translation.xy(), BOID_VIEW_RANGE / 4.0)
             .iter()
             .filter_map(|(pos, entt)| {
                 // Skip self-comparison. A boid should not try to separate from itself.
