@@ -256,7 +256,8 @@ fn alignment(
             continue;
         };
 
-        force.0 = (avg.extend(0.0) - force.0) * ALIGNMENT_FACTOR;
+        let boid_vel = boid_velocities.get(this_entt).unwrap();
+        force.0 += (avg.extend(0.0) - boid_vel.0) * ALIGNMENT_FACTOR;
     }
 }
 
