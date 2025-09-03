@@ -1,8 +1,8 @@
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_spatial::{kdtree::KDTree2, SpatialAccess};
+use bevy_spatial::{SpatialAccess, kdtree::KDTree2};
 
 use crate::birdoids::{
-    center_of_boids, physics::Force, physics::Velocity, velocity_of_boids, Boid, TrackedByKdTree,
+    Boid, TrackedByKdTree, center_of_boids, physics::Force, physics::Velocity, velocity_of_boids,
 };
 
 const SCANRADIUS: f32 = 50.0;

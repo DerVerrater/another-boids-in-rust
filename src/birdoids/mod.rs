@@ -2,10 +2,10 @@ pub mod physics;
 
 use bevy::prelude::*;
 use bevy_spatial::{
-    kdtree::KDTree2, AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode,
+    AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode, kdtree::KDTree2,
 };
 
-use crate::birdoids::physics::{apply_velocity, Force, Velocity};
+use crate::birdoids::physics::{Force, Velocity, apply_velocity};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
@@ -171,11 +171,7 @@ fn cohesion(
                 // Skip self-comparison. A boid should not try to separate from itself.
                 let entt = entt
                     .expect("within_distance gave me an entity... with no entity ID... somehow");
-                if this_entt == entt {
-                    None
-                } else {
-                    Some(pos)
-                }
+                if this_entt == entt { None } else { Some(pos) }
             })
             .enumerate()
             .fold((0, Vec2::ZERO), |(_len, com), (idx, pos)| (idx, com + pos));
@@ -248,7 +244,7 @@ fn alignment(
                 if this_entt == entt {
                     None
                 } else {
-                let vel = boid_velocities.get(entt).expect("Boid has no velocity!");
+                    let vel = boid_velocities.get(entt).expect("Boid has no velocity!");
                     Some(vel.xy())
                 }
             })
@@ -333,7 +329,7 @@ mod tests {
 
     use crate::birdoids::{cohesive_force, separation_force};
 
-    use super::{physics::Force, BOID_VIEW_RANGE};
+    use super::{BOID_VIEW_RANGE, physics::Force};
 
     // forces are relative to the boid's view range, so all
     // distances need to be fractions of that
