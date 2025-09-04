@@ -15,7 +15,7 @@ RUN cargo build --locked --target wasm32-unknown-unknown --profile=wasm-release
 RUN wasm-bindgen --no-typescript --target web --out-dir ./out/ --out-name "boids" target/wasm32-unknown-unknown/wasm-release/another-boids-in-rust.wasm
 COPY www/index.html out/index.html
 
-FROM busybox
+FROM busybox:musl
 RUN mkdir -p /var/www
 COPY --from=builder ./out/ /var/www
 WORKDIR /var/www
