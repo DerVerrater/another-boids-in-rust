@@ -1,4 +1,4 @@
-FROM rust:1.89 as builder
+FROM rust:1.89 AS builder
 
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends libasound2-dev libudev-dev
