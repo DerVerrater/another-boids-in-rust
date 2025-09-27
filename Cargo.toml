@@ -7,14 +7,14 @@ edition = "2024"
 bevy = "0.16.0"
 
 # Grand-dependency pins
-ab_glyph = "0.2.16"
-fnv = "1.0.6"
-gilrs = "0.10.5"
-lazy_static = "1.0.2"
-lock_api = "0.4.7"
-miniz-sys = "0.1.10"
-nonmax = "0.5.1"
-rand = "0.8.0"
+# ab_glyph = "0.2.16"
+# fnv = "1.0.6"
+# gilrs = "0.10.5"
+# lazy_static = "1.0.2"
+# lock_api = "0.4.7"
+# miniz-sys = "0.1.10"
+# nonmax = "0.5.1"
+# rand = "0.8.0"
 
 # Use regular bevy_spatial on non-WASM builds
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
