@@ -1,0 +1,21 @@
+Source: another-boids-in-rust
+Maintainer: Robert Garrett <robertgarrett404@gmail.com>
+Section: misc
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-cargo,
+Homepage: https://git.gelvin.dev/robert/boids
+Vcs-Git: https://git.gelvin.dev/robert/boids
+Vcs-Browser: https://git.gelvin.dev/robert/boids
+Rules-Requires-Root: no
+
+Package: another-boids-in-rust
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Another Boids implementation in Rust.
+ Boids is a flocking algorithm. This one is built in Rust using the Bevy game
+ engine.
