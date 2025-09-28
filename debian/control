@@ -6,6 +6,9 @@ Standards-Version: 4.6.2
 Build-Depends:
  debhelper-compat (= 13),
  dh-cargo,
+ pkg-config,
+ libasound2-dev,
+ libudev-dev,
 Homepage: https://git.gelvin.dev/robert/boids
 Vcs-Git: https://git.gelvin.dev/robert/boids
 Vcs-Browser: https://git.gelvin.dev/robert/boids
