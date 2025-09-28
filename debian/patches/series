@@ -1,0 +1,3 @@
+0001-Alter-blake3-to-emit-Built-Using-info.patch
+0002-Use-pure-Rust-implementation-of-Blake3-parts.patch
+0003-Use-mini-as-release-profile.patch

@@ -1,0 +1,25 @@
+From: Robert Garrett <robertgarrett404@gmail.com>
+Date: Sat, 27 Sep 2025 22:01:16 -0500
+Subject: Use "mini" as "release" profile
+
+---
+ Cargo.toml | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Cargo.toml b/Cargo.toml
+index 60dd621..c7bcf17 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -36,8 +36,11 @@ opt-level = 1
+ opt-level = 3
+ 
+ [profile.release]
+-# codegen-units = 1
+ lto = "fat"
++opt-level = "z"
++codegen-units = 1
++strip = "symbols"
++panic = "abort"
+ 
+ [profile.mini]
+ inherits = "release"

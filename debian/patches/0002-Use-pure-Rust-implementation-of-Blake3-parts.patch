@@ -1,0 +1,28 @@
+From: Robert Garrett <robertgarrett404@gmail.com>
+Date: Fri, 26 Sep 2025 11:02:04 -0500
+Subject: Use pure Rust implementation of Blake3 parts
+
+I can't figure out how to get Debian's build system to tell the blake3
+crate what CPU features are available. It's possible the answer is that
+I'm not supposed to, or that I simply do not.
+
+Rather than figure it out, I'll just avoid the question by not using
+C, C++, or assembly through the conditional compilation systems.
+---
+ Cargo.toml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Cargo.toml b/Cargo.toml
+index fe0a0c2..60dd621 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -6,6 +6,9 @@ edition = "2024"
+ [dependencies]
+ bevy = "0.16.0"
+ 
++# Use pure-Rust impl. to dodge problems with CPU feature set availability.
++blake3 = { version = "1.8.2", features = ["pure"] }
++
+ # Grand-dependency pins
+ # ab_glyph = "0.2.16"
+ # fnv = "1.0.6"
