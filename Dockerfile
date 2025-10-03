@@ -9,7 +9,7 @@ RUN cargo install --locked wasm-bindgen-cli
 # will cause Docker to re-run `cargo build` even when the source hasn't changed.
 COPY src/ ./src
 COPY Cargo.toml ./Cargo.toml
-COPY Cargo.lock
+COPY Cargo.lock ./Cargo.lock
 
 RUN cargo build --locked --target wasm32-unknown-unknown --profile=wasm-release
 RUN wasm-bindgen --no-typescript --target web --out-dir ./out/ --out-name "boids" target/wasm32-unknown-unknown/wasm-release/another-boids-in-rust.wasm
