@@ -1,8 +1,97 @@
 <!doctype html>
 <html lang="en">
-
+  <head>
+    <style>
+      h1 {
+        text-align: center;
+      }
+      canvas {
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+      main {
+        margin-left: auto;
+        margin-right: auto;
+        width: 70%;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid;
+        padding: 2px 4px;
+      }
+    </style>
+  </head>
 <body style="margin: 0px;">
+  <h1>
+    Another Boids in Rust
+  </h1>
   <canvas id="boids-canvas" width="1280" height="720"></canvas>
+  <main>
+    <article>
+      <h2>Description</h2>
+      <p>
+        This is my implementation of the Boids flocking algorithm. It is written in Rust, built on the Bevy game engine, and compiled to WASM to run in the browser.
+      </p>
+      <p>
+        The algorithm consists of just 3 rules:
+        <ul>
+          <li><strong>Separation</strong> - Boids steer apart to avoid colliding.</li>
+          <li><strong>Alignment</strong> - Boids fly in the same direction as their neighbors.</li>
+          <li><strong>Cohesion</strong> - Boids clump together so as not to fly off alone.</li>
+        </ul>
+        From these rules, the flocking behavior emerges naturally.
+      </p>
+      <p>
+        My version of this program has some extra rules governing speed. In short: things below some threshold are sped
+        up, and things above are slowed down. This is to keep an appropriate amount of kinetic energy in the system.
+        Since the boids start in a circle with the same speed, the sum of all velocity vectors is <code>vec2(0, 0)</code>.
+        Technically, floating-point rounding errors would likely mean the system always has some energy, but never
+        enough for an interesting simulation.
+      </p>
+    </article>
+    <article>
+      <h3>Controls</h3>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Input</th>
+            <th scope="col">Effect</th>
+          </tr>
+        </thead>
+        <tr>
+          <td>Mouse</td>
+          <td>The scanner circle is attached to the mouse cursor. Move it to scan boids within the radius.</td>
+        </tr>
+        <tr>
+          <td>Left mouse button</td>
+          <td>Put scanner into center-of-mass mode</td>
+        </tr>
+        <tr>
+          <td>Right mouse button</td>
+          <td>Put scanner into average velocity mode. (There's a window focus bug. This button doesn't work quite right!)</td>
+        </tr>
+      </table>
+    </article>
+    <article>
+      <h3>Misc</h3>
+      <table>
+        <tr>
+          <td>Source code</td>
+          <td><a href=https://github.com/DerVerrater/another-boids-in-rust>https://github.com/DerVerrater/another-boids-in-rust</a></td>
+        </tr>
+        <tr>
+          <td>Program Version</td>
+          <!-- This version text is completely unchecked. I'll need to do something about that. -->
+          <td><code>v0.3.0 (+patches)</code></td>
+        </tr>
+      </table>
+    </article>
+  </main>
   <script type="module">
     import init from './boids.js'
 
