@@ -21,7 +21,12 @@ web: out/boids.js out/boids_bg.wasm out/boids.html
 
 tarball: boids_web_root.tar
 
-boids_web_root.tar: out/boids.js out/boids_bg.wasm out/index.html
+tarball_standalone: boids_web_root_standalone.tar
+
+boids_web_root.tar: out/boids.js out/boids_bg.wasm out/boids.html
+	tar -caf $@ $^
+
+boids_web_root_standalone.tar: out/boids.js out/boids_bg.wasm out/index.html
 	tar -caf $@ $^
 
 target/$(CARGO_TARGET)/$(CARGO_PROFILE)/another-boids-in-rust.wasm: $(SRCS) Cargo.lock Cargo.toml
@@ -48,7 +53,7 @@ out/boids.html: www/index.html
 # Clean the web build, but not the Cargo cache. Cargo handles it's own caching
 # and I don't want to obliterate it all the time.
 clean:
-	rm -rf out/ boids_web_root.tar
+	rm -rf out/ boids_web_root.tar boids_web_root_standalone.tar
 
 # Delete everything, including the Cargo build cache. In case someone needs
 # this, I guess.
