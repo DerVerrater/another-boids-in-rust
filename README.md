@@ -21,13 +21,41 @@ You'll need a working Rust toolchain, of course. See the [rustup](https://rustup
 
 ### Web
 
-This project creates a "static site," meaning a complete deployment of the site is simply copying the output folder onto a webserver.
+This project creates a "static site," meaning a complete deployment of the site is simply copying the output folder onto a webserver. There are **two** ways to use this.
 
-1. Build `make -f ./makefile_web web`
+1. A standalone application which can be quickly hosted as-is. This includes the WASM, it's JS glue, and an index.html page.
+2. A sub-page in a larger website. This is actually the same, but names it's HTML page "boids.html" so consumers (you) can provide their own index.html.
+    - I'm not using a JS Bundler at this time. If you're familiar with JS development, this probably looks like a dumb way to do it. Sorry about that.
+
+#### Standalone build:
+
+1. Build `make web-standalone`
 2. Serve `python3 -m http.server -d ./out`
 3. Visit site in browser: `http://localhost:8000`
 
-You can use any HTTP server you like. Here, I'm using the Python3 built-in [http.server module](https://docs.python.org/3/library/http.server.html); which is **NOT** recommended for production use. Don't put that on the Internet! Alternatives include [Miniserve](https://crates.io/crates/miniserve) and [BusyBox](https://busybox.net/). The latter of which I'm using in the Docker image.
+To quickly get a tarball, use `make tarball_standalone`. If you're trying to build and upload the program somewhere, this may provide a bit of convenience. Compressing it may be a good idea, too.
+
+#### "Bundle-able" build
+
+For a "bundle-able" build, you'll need to write your own index.html and link to the boids.html file.
+
+Basically, just throw in a hyperlink with `<a href="boids.html">Boids</a>`
+
+```html
+<!DOCTYPE html>
+<html>
+    <!-- your page content, etc -->
+    <body>
+        <a href="boids.html">Boids</a>
+    </body>
+    <!-- more page content, etc -->
+</html>
+```
+
+As mentioned in the option 2 description, I'm not using a JS Bundler. There is no "package.json" or anything to integrate properly with a JS framework. I plan to fix that at some point, but for now there are just a bunch of files to grab.
+---
+
+You can use any HTTP server you like. In the steps above, I'm using the Python3 built-in [http.server module](https://docs.python.org/3/library/http.server.html); which is **NOT** recommended for production use. Don't put that on the Internet! Alternatives include [Miniserve](https://crates.io/crates/miniserve) and [BusyBox](https://busybox.net/). The latter of which I'm using in the Docker image.
 
 ### Web, but as a Docker Container
 
