@@ -7,10 +7,13 @@
 CARGO_TARGET := wasm32-unknown-unknown
 CARGO_PROFILE := wasm-release
 
+# Override DESTDIR to set a custom install path (such as your web root)
+DESTDIR ?= .
+
 SRC_DIR = ./src
 SRCS := $(wildcard $(SRC_DIR)/**)
 
-.PHONY: clean full-clean tarball tarball-standalone web web-standalone
+.PHONY: clean full-clean install tarball tarball-standalone web web-standalone
 
 # "Standalone" version
 # (i.e., it includes an index.html so it can be placed on a server as-is)
@@ -59,3 +62,11 @@ clean:
 # this, I guess.
 full-clean: clean
 	cargo clean
+
+# Installation goal. It's meant to be a helper utility for moving the built
+# output into the web root. Only supports the "bundle-able" mode.
+install: web
+	install -dm0755 $(DESTDIR)
+	install -m0644 out/boids.js $(DESTDIR)/
+	install -m0644 out/boids_bg.wasm $(DESTDIR)/
+	install -m0644 out/boids.html $(DESTDIR)/
