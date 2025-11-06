@@ -1,14 +1,14 @@
 # This script produces a web build. If you aren't trying to do that, it is
 # entirely useless to you.
 
-SRC_DIR = ./src
-SRCS := $(wildcard $(SRC_DIR)/**)
-
 # Patch these to select a different build profile or target
 # The target shouldn't change any time soon. WASM64, I guess. Other targets
 # aren't aimed at the web, so you shouldn't be using this makefile.
 CARGO_TARGET := wasm32-unknown-unknown
 CARGO_PROFILE := wasm-release
+
+SRC_DIR = ./src
+SRCS := $(wildcard $(SRC_DIR)/**)
 
 .PHONY: clean full-clean web tarball
 
