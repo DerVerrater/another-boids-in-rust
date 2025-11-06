@@ -38,10 +38,12 @@ out/boids.js out/boids_bg.wasm &: target/$(CARGO_TARGET)/$(CARGO_PROFILE)/anothe
 # Copies the index page to the output
 out/index.html: www/index.html
 	cp -a $< $@
+	rm -f out/boids.html
 
 # Like `out/index.html`, but renames it for use in a larger site.
 out/boids.html: www/index.html
 	cp -a $< $@
+	rm -f out/index.html
 
 # Clean the web build, but not the Cargo cache. Cargo handles it's own caching
 # and I don't want to obliterate it all the time.
