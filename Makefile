@@ -1,3 +1,6 @@
+# This script produces a web build. If you aren't trying to do that, it is
+# entirely useless to you.
+
 SRC_DIR = ./src
 SRCS := $(wildcard $(SRC_DIR)/**)
 
