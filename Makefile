@@ -10,9 +10,14 @@ CARGO_PROFILE := wasm-release
 SRC_DIR = ./src
 SRCS := $(wildcard $(SRC_DIR)/**)
 
-.PHONY: clean full-clean web tarball
+.PHONY: clean full-clean tarball tarball-standalone web web-standalone
 
-web: out/boids.js out/boids_bg.wasm out/index.html
+# "Standalone" version
+# (i.e., it includes an index.html so it can be placed on a server as-is)
+web-standalone: out/boids.js out/boids_bg.wasm out/index.html
+
+# "Bundle-able" version. The host site must provide it's own HTML page.
+web: out/boids.js out/boids_bg.wasm out/boids.html
 
 tarball: boids_web_root.tar
 
@@ -30,7 +35,12 @@ out:
 out/boids.js out/boids_bg.wasm &: target/$(CARGO_TARGET)/$(CARGO_PROFILE)/another-boids-in-rust.wasm | out
 	wasm-bindgen --no-typescript --target web --out-dir ./out/ --out-name boids target/$(CARGO_TARGET)/$(CARGO_PROFILE)/another-boids-in-rust.wasm
 
+# Copies the index page to the output
 out/index.html: www/index.html
+	cp -a $< $@
+
+# Like `out/index.html`, but renames it for use in a larger site.
+out/boids.html: www/index.html
 	cp -a $< $@
 
 # Clean the web build, but not the Cargo cache. Cargo handles it's own caching
