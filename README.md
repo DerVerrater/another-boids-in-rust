@@ -53,6 +53,7 @@ Basically, just throw in a hyperlink with `<a href="boids.html">Boids</a>`
 ```
 
 As mentioned in the option 2 description, I'm not using a JS Bundler. There is no "package.json" or anything to integrate properly with a JS framework. I plan to fix that at some point, but for now there are just a bunch of files to grab.
+
 ---
 
 You can use any HTTP server you like. In the steps above, I'm using the Python3 built-in [http.server module](https://docs.python.org/3/library/http.server.html); which is **NOT** recommended for production use. Don't put that on the Internet! Alternatives include [Miniserve](https://crates.io/crates/miniserve) and [BusyBox](https://busybox.net/). The latter of which I'm using in the Docker image.
@@ -73,6 +74,7 @@ You may also notice that the Dockerfile doesn't call on the Makefile. This is be
 ## Controls
 
 | Input | Effect |
+|-|-|
 | Mouse | The scanner circle is attached to the mouse cursor. Move it to scan boids within the radius. |
 | Left mouse button | Put scanner into center-of-mass mode |
 | Right mouse button | Put scanner into average velocity mode |
