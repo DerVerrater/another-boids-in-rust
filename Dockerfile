@@ -1,7 +1,6 @@
 FROM rust:1.89 AS builder
 
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends libasound2-dev libudev-dev
 RUN rustup target add wasm32-unknown-unknown
 RUN cargo install --locked wasm-bindgen-cli
 
