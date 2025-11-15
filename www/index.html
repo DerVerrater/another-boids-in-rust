@@ -112,7 +112,11 @@
   <script type="module">
     import init from './boids.js'
 
-    init().catch((error) => {
+    let compressed = await fetch("./boids_bg.wasm.gz")
+    let wasm_stream = compressed.body.pipeThrough(new DecompressionStream("gzip"))
+    let blob = await new Response(wasm_stream).blob();
+
+    init(await blob.arrayBuffer()).catch((error) => {
       if (!error.message.startsWith("Using exceptions for control flow, don't mind me. This isn't actually an error!")) {
         throw error;
       }
