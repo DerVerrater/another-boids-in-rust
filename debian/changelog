@@ -1,3 +1,49 @@
+another-boids-in-rust (0.6.0-1~1.gbp57907c) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @57907c105ab79d6b10bcb730d9cbcab8e693f150 **
+
+  * Fix: Missing destination in Docker copy instr.
+  * Add a Makefile to make web builds more ergonomic
+  * Rename WASM & JS output to match HTML
+  * Drop extra suffix in wasm-bindgen output name
+  * Turn output folder into an order-only prerequisite
+  * Make wasm binary target depend on source files
+  * Fix: use correct name suffix for the WASM file
+  * Group the WASM & JS targets so they're built once
+  * Use vars to hold target & profile in makefile_web
+  * Add and use a custom canvas element on the page
+  * Don't have Bevy resize to full-screen
+  * Fix: WASM target needs to depend on Cargo.* files
+  * First draft of page structure, basic styling
+  * Fix: automatic var to use *all* deps, not first
+  * Add a README to the project
+  * Add a license file (AGPLv3)
+  * Release v0.4.0
+  * Remove fly.toml from repo
+  * Rename the Makefile, add usage note at the top
+  * Place Makefile 'configurables' up top
+  * New build variants: "standalone" and "bundle-able"
+  * HTML-installing targets remove the other one
+  * Add the tarball-standalone recipe(s)
+  * Update the README with new web build variant info
+  * Set charset & viewport meta tags
+  * Add an install target
+  * Add a bunch of CSS
+  * Update Dockerfile to use the new Make-based build
+  * Remove bogus dependencies from build container
+  * Release v0.5.0
+  * Drop CI cargo-clippy check, can't run on Gitea
+  * Drop CI semver check, this isn't a library
+  * Update CI, the MSRV is 1.87
+  * Fix: Syntax errors in README.md
+  * Use compressed WASM for even smaller webroot size
+  * Release v0.6.0
+  * Pin transitive dep ruzstd=0.8.1
+  * Lock the new dependencies and vendor them
+  * Re-diff patch queue
+
+ -- Robert Garrett <robertgarrett404@gmail.com>  Tue, 18 Nov 2025 13:32:25 -0600
+
 another-boids-in-rust (0.3.0-1.1) unstable; urgency=medium
 
   * Breakout game, from Bevy examples
