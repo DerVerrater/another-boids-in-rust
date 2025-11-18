@@ -7,10 +7,10 @@ Subject: Use "mini" as "release" profile
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/Cargo.toml b/Cargo.toml
-index 60dd621..c7bcf17 100644
+index 4b2cf49..192533d 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -36,8 +36,11 @@ opt-level = 1
+@@ -39,8 +39,11 @@ opt-level = 1
  opt-level = 3
  
  [profile.release]

@@ -13,12 +13,12 @@ C, C++, or assembly through the conditional compilation systems.
  1 file changed, 3 insertions(+)
 
 diff --git a/Cargo.toml b/Cargo.toml
-index fe0a0c2..60dd621 100644
+index 952ddd3..4b2cf49 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
-@@ -6,6 +6,9 @@ edition = "2024"
- [dependencies]
- bevy = "0.16.0"
+@@ -9,6 +9,9 @@ bevy = "0.16.0"
+ 
+ ruzstd = "=0.8.1"
  
 +# Use pure-Rust impl. to dodge problems with CPU feature set availability.
 +blake3 = { version = "1.8.2", features = ["pure"] }
