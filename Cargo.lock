@@ -142,10 +142,11 @@ dependencies = [
 
 [[package]]
 name = "another-boids-in-rust"
-version = "0.3.0"
+version = "0.6.0"
 dependencies = [
  "bevy",
  "bevy_spatial",
+ "ruzstd",
 ]
 
 [[package]]
