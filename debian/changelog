@@ -1,5 +1,121 @@
-another-boids-in-rust (0.3.0-1) UNRELEASED; urgency=medium
-  
-  * TODO: Regenerate the changelog from Git history
+another-boids-in-rust (0.3.0-1.1) unstable; urgency=medium
 
- -- Robert Garrett <robertgarrett404@gmail.com>  Sat, 27 Sep 2025 10:33:04 -0500
+  * Breakout game, from Bevy examples
+  * Extract games into own modules as Bevy Plugins
+  * Breakout game as plugin
+  * Check-in a check.yml workflow: jonhoo/rust-ci-conf
+  * Format all cargo source files.
+  * Adjust workflow to install ALSA
+  * GH Actions have prompts in non-interactive mode
+  * Starting the Boids impl. Dot explosion
+  * Add keyboard event handler. "Q" to quit program
+  * Basic player character steering
+  * Slightly better signature for keyboard handler
+  * Delete unused entity spawn, add player color const
+  * Border avoidance system
+  * New Cargo.toml config & updated lock file
+  * cargo-fmt
+  * Apply cargo check fixes
+  * Added bevy_spatial for boid interactions
+  * Cohesion function... sorta. Cohesion *no* function
+  * Fix cohesion force vector
+  * Iterate over all boids instead of only the player
+  * Just use a for loop in the cohesion function
+  * Boids clumping (try for separation function)
+  * Fix: force direction & magnitude for separation
+  * Fix: Put the cohesion function back in
+  * Fix over-application of cohesion forces
+  * Further rewrite of cohesion to match separation
+  * Make `cohesion()` affect the acceleration
+  * Use 1.0 for steering, and small init velocity
+  * Spawn boids in larger ring so they don't pop apart
+  * Alignment function complete, seems off...
+  * Braking function to slow all boids
+  * This is only a Boids project, now. Drop others.
+  * New DebugUI plugin
+  * Scaffolding for selection & scanning modes
+  * Cursor gizmo mode changing inputs are working
+  * Debug draw CoM is working!... CoM has error
+  * Fix: off-by-one in the boid count enumeration
+  * Completed velocity pointer gizmo
+  * Move util functions below systems functions
+  * Refactor cohesion() to use center_of_boids()
+  * Refactor alignment() to use velocity_of_boids
+  * Fix: spatial tree update frequency is too low
+  * Fix: Acceleration needs to be reset to 0
+  * Crank up the forces to see the boids move!
+  * `cargo fmt` again
+  * Drop unneeded `use` line
+  * Give space_brakes a const coefficient
+  * Rename Acceleration to Force
+  * Add cohesive_force function
+  * Fix: Return Force instead of Vec2
+  * Add separation_force function
+  * Move separation_force down with cohesive_force
+  * Add unit tests for force functions
+  * Fix: Cohesion function was accepting bad input
+  * Tests were missing the BOID_VIEW_RANGE
+  * Placeholder for separation on div-0 error
+  * Rename separation_force parameters
+  * Update tests: Force return needs an Option<>
+  * Update force functions to use Option<Force>
+  * Run `cargo fmt` before merging branch
+  * Pin grand-dependencies for -Zminimal-versions
+  * Bump MSRV for named profiles to work
+  * Full fat LTO for the very best size reduction
+  * Add a "mini" build profile
+  * Begin v0.2.0-dev and upgrade Bevy version
+  * Adjust code for Bevy 0.14 -> 0.16 upgrade
+  * Autoformat
+  * Switch off deprecated functions, fix clippy lints
+  * Rename & restructure birdoids module
+  * Bump Rust edition to 2024
+  * Move physics parts to a physics module
+  * Make another new alignment system
+  * Fix the physics integrator
+  * Remove BoidBundle, use required-components instead
+  * Make keyboard control forces, not velocities
+  * Filter-map the entities to avoid self-alignment
+  * New `separation` rule function
+  * New `cohesion` rule function
+  * Fix: off-by-one error in `alignment` averaging
+  * Fix: `alignment` should align to vel, not impulse
+  * Add speed_controller to maintain system energy
+  * Put the boid separation range back to 1/4 not 1/8
+  * Autoformat
+  * Add a WASM build configuration
+  * Mark v0.2.0, update lockfile
+  * Use whole browser window
+  * Make the WASM build profile even smaller
+  * Add an index.html file, taken from Bevy Cheatbook
+  * Dockerfile for WASM build's webserver
+  * Check-in the fly.toml config file
+  * Build using the locked dependency versions
+  * Use busybox:musl to save a couple more MB
+  * Disable the minimal-version pins
+  * Mark crate version 0.3.0, upadate lockfile
+  * Fix casing in Dockerfile
+  * Vendor dependencies for 0.3.0 release
+  * Begin package for Debian Trixie
+  * Add missing build-depends
+  * Rediff patches
+  * Add "+vendor" to upstream tag name
+  * Add missing build-depends
+  * Rediff patches
+  * Add "+vendor" to upstream tag name
+
+  * WARN: The previous version, 0.3.0-1, can no longer be built without making
+    corrections. It's debian/gbp.conf file will try to use "v0.3.0" as the up-
+    stream release tag, but that is no longer correct. I moved that tag to mark
+    the real Crate release and replaced it with the tag "v0.3.0+vendor".
+    .
+    I've chosen to increment the version by a minor release because I uploaded
+    a build of 0.3.0-1 to my GitHub. I don't think anyone has used it or will
+    care if the "true" original vanishes, but I'm choosing to operate as if
+    there is.
+    .
+    If you are trying to rebuild that version, you must either patch gbp.conf
+    or manually build a tarball from the new tag name. GBP doesn't validate the
+    tarball so if it finds one named appropriately, then it will just use it.
+
+ -- Robert Garrett <robertgarrett404@gmail.com>  Tue, 18 Nov 2025 12:13:41 -0600
