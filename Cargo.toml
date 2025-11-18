@@ -7,6 +7,8 @@ license = "AGPL-3.0-only"
 [dependencies]
 bevy = "0.16.0"
 
+ruzstd = "=0.8.1"
+
 # Grand-dependency pins
 # ab_glyph = "0.2.16"
 # fnv = "1.0.6"
