@@ -106,11 +106,6 @@ fn update_scanner_mode(
     }
 }
 
-fn print_gizmo_config(query: Query<(&SelectionMode, &ScannerMode), With<Cursor>>) {
-    let (select, scan) = query.single().unwrap();
-    println!("Selection: {select:?}, Scanning: {scan:?}");
-}
-
 fn do_scan(
     boids_query: Query<(&Transform, &Velocity, &Force), With<Boid>>,
     scanner_query: Query<(&Transform, &SelectionMode, &ScannerMode), With<Cursor>>,
