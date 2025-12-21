@@ -6,6 +6,7 @@ license = "AGPL-3.0-only"
 
 [dependencies]
 bevy = "0.16.0"
+bevy-inspector-egui = "0.32"
 
 # Grand-dependency pins
 # ab_glyph = "0.2.16"

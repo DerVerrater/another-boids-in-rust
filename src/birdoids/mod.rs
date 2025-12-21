@@ -6,14 +6,12 @@ use bevy_spatial::{
 };
 
 use crate::birdoids::physics::{Force, Velocity, apply_velocity};
+use bevy_inspector_egui::{InspectorOptions, prelude::ReflectInspectorOptions};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 const TURN_FACTOR: f32 = 1.0;
-const BOID_VIEW_RANGE: f32 = 15.0;
-const COHESION_FACTOR: f32 = 1.0;
-const SEPARATION_FACTOR: f32 = 5.0;
-const ALIGNMENT_FACTOR: f32 = 2.0;
+
 const SPACEBRAKES_COEFFICIENT: f32 = 0.5;
 const LOW_SPEED_THRESHOLD: f32 = 50.0;
 const HIGH_SPEED_THRESHOLD: f32 = 200.0;
@@ -29,6 +27,8 @@ impl Plugin for BoidsPlugin {
                 .with_spatial_ds(SpatialStructure::KDTree2),
         )
         .insert_resource(ClearColor(BACKGROUND_COLOR))
+        .insert_resource(FlockingParameters::new())
+        .register_type::<FlockingParameters>()
         .add_systems(Startup, (spawn_camera, spawn_boids))
         .add_systems(
             FixedUpdate,
@@ -42,6 +42,26 @@ impl Plugin for BoidsPlugin {
                 speed_controller,
             ),
         );
+    }
+}
+
+#[derive(InspectorOptions, Reflect, Resource, Debug, Clone, Copy)]
+#[reflect(Resource, InspectorOptions)]
+pub(crate) struct FlockingParameters {
+    view_range: f32,
+    cohesion: f32,
+    separation: f32,
+    alignment: f32,
+}
+
+impl FlockingParameters {
+    pub(crate) fn new() -> Self {
+        Self {
+            view_range: 15.0,
+            cohesion: 1.0,
+            separation: 5.0,
+            alignment: 2.0,
+        }
     }
 }
 
@@ -157,6 +177,7 @@ fn check_keyboard(
 fn cohesion(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
+    props: Res<FlockingParameters>,
 ) {
     // for each boid
     // find neighbors
@@ -165,7 +186,7 @@ fn cohesion(
     // apply force
     for (this_entt, transform, mut force) in &mut boids {
         let (len, sum) = spatial_tree
-            .within_distance(transform.translation.xy(), BOID_VIEW_RANGE)
+            .within_distance(transform.translation.xy(), props.view_range)
             .iter()
             .filter_map(|(pos, entt)| {
                 // Skip self-comparison. A boid should not try to separate from itself.
@@ -183,15 +204,17 @@ fn cohesion(
             continue;
         };
 
-        let impulse = cohesive_force(center_of_mass, transform.translation.xy()).expect("damn");
+        let impulse = cohesive_force(center_of_mass, transform.translation.xy(), props.view_range)
+            .expect("damn");
 
-        force.0 -= impulse.0 * COHESION_FACTOR;
+        force.0 -= impulse.0 * props.cohesion;
     }
 }
 
 fn separation(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
+    props: Res<FlockingParameters>,
 ) {
     // for each boid
     // find neighbors
@@ -199,7 +222,7 @@ fn separation(
     // apply force
     for (this_entt, tsfm, mut force) in &mut boids {
         let impulse = spatial_tree
-            .within_distance(tsfm.translation.xy(), BOID_VIEW_RANGE / 4.0)
+            .within_distance(tsfm.translation.xy(), props.view_range / 4.0)
             .iter()
             .filter_map(|(pos, entt)| {
                 // Skip self-comparison. A boid should not try to separate from itself.
@@ -213,10 +236,11 @@ fn separation(
             })
             .fold(Vec3::ZERO, |acc, other| {
                 // let force = tsfm.translation - other;
-                let force = separation_force(tsfm.translation.xy(), other.xy()).expect("angy");
+                let force = separation_force(tsfm.translation.xy(), other.xy(), props.view_range)
+                    .expect("angy");
                 acc + force.0
             });
-        force.0 += impulse * SEPARATION_FACTOR;
+        force.0 += impulse * props.separation;
     }
 }
 
@@ -224,6 +248,7 @@ fn alignment(
     spatial_tree: Res<KDTree2<TrackedByKdTree>>,
     mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
     boid_velocities: Query<&Velocity, With<Boid>>,
+    props: Res<FlockingParameters>,
 ) {
     // for each boid
     // find neighbors
@@ -233,7 +258,7 @@ fn alignment(
     // apply steering force
 
     for (this_entt, transform, mut force) in &mut boids {
-        let neighbors = spatial_tree.within_distance(transform.translation.xy(), BOID_VIEW_RANGE);
+        let neighbors = spatial_tree.within_distance(transform.translation.xy(), props.view_range);
         // averaging divides by length. Guard against an empty set of neighbors
         let (len, sum) = neighbors
             .iter()
@@ -261,7 +286,7 @@ fn alignment(
         };
 
         let boid_vel = boid_velocities.get(this_entt).unwrap();
-        force.0 += (avg.extend(0.0) - boid_vel.0) * ALIGNMENT_FACTOR;
+        force.0 += (avg.extend(0.0) - boid_vel.0) * props.alignment;
     }
 }
 
@@ -287,13 +312,13 @@ fn average_of_vec2s(points: impl Iterator<Item = Vec2>) -> Option<Vec2> {
 }
 
 // f(x) = 4((x-0.5)^3 + 0.125)
-fn cohesive_force(boid: Vec2, target: Vec2) -> Option<Force> {
+fn cohesive_force(boid: Vec2, target: Vec2, view_range: f32) -> Option<Force> {
     let deviation = target - boid;
     /*
     Scale deviation vector by the boid's view range. The curve is made to
     operate on the range (0, 1), so that needs to be the viewing circle.
     */
-    let scaled = deviation / BOID_VIEW_RANGE;
+    let scaled = deviation / view_range;
     let mag = scaled.length();
     if mag > 0.0 {
         let cube: f32 = (mag - 0.5).powf(3.0);
@@ -310,9 +335,9 @@ fn cohesive_force(boid: Vec2, target: Vec2) -> Option<Force> {
 }
 
 // f(x) = x^2 - 1
-fn separation_force(boid: Vec2, target: Vec2) -> Option<Force> {
+fn separation_force(boid: Vec2, target: Vec2, view_range: f32) -> Option<Force> {
     // Scale from BOID_VIEW_RANGE to unit space
-    let distance_unit = (target - boid) / BOID_VIEW_RANGE;
+    let distance_unit = (target - boid) / view_range;
     let mag = distance_unit.length();
     if mag > 0.0 {
         let force_mag = mag.powf(2.0) - 1.0;
@@ -329,14 +354,15 @@ mod tests {
 
     use crate::birdoids::{cohesive_force, separation_force};
 
-    use super::{BOID_VIEW_RANGE, physics::Force};
+    use super::{FlockingParameters, physics::Force};
 
     // forces are relative to the boid's view range, so all
     // distances need to be fractions of that
 
     #[test]
     fn check_cohesion_zero_zero() {
-        let force = cohesive_force(Vec2::ZERO, Vec2::ZERO);
+        let props = FlockingParameters::new();
+        let force = cohesive_force(Vec2::ZERO, Vec2::ZERO, props.view_range);
         assert!(force.is_none());
     }
 
@@ -347,36 +373,56 @@ mod tests {
     #[test]
     fn check_cohesion_midpoint_x_positive() {
         // Pull right 0.5 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.5, 0.0, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(0.5 * BOID_VIEW_RANGE, 0.0),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.5 * props.view_range, 0.0),
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_cohesion_midpoint_x_negative() {
         // Pull left 0.5 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(-0.5, 0.0, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(-0.5 * BOID_VIEW_RANGE, 0.0),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(-0.5 * props.view_range, 0.0),
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_cohesion_edge_x_positive() {
         // pull left 1.0 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(1.0, 0.0, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(1.0 * BOID_VIEW_RANGE, 0.0),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(1.0 * props.view_range, 0.0),
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_cohesion_edge_x_negative() {
         // pull left 1.0 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(-1.0, 0.0, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(-1.0 * BOID_VIEW_RANGE, 0.0),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(-1.0 * props.view_range, 0.0),
+                props.view_range
+            )
         );
     }
 
@@ -387,43 +433,64 @@ mod tests {
     #[test]
     fn check_cohesion_midpoint_y_positive() {
         // Pull up 0.5 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.0, 0.5, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(0.0, 0.5 * BOID_VIEW_RANGE),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 0.5 * props.view_range),
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_cohesion_midpoint_y_negative() {
         // Pull down 0.5 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.0, -0.5, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(0.0, -0.5 * BOID_VIEW_RANGE),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, -0.5 * props.view_range),
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_cohesion_edge_y_positive() {
         // Pull up 1.0 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.0, 1.0, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(0.0, 1.0 * BOID_VIEW_RANGE))
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, 1.0 * props.view_range),
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_cohesion_edge_y_negative() {
         // pull down 0.2 units
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.0, -1.0, 0.0))),
-            cohesive_force(Vec2::new(0.0, 0.0), Vec2::new(0.0, -1.0 * BOID_VIEW_RANGE),)
+            cohesive_force(
+                Vec2::new(0.0, 0.0),
+                Vec2::new(0.0, -1.0 * props.view_range),
+                props.view_range
+            )
         );
     }
 
     // Separation 0,0 test
     #[test]
     fn check_separation_zero_zero() {
-        let force = separation_force(Vec2::ZERO, Vec2::ZERO);
+        let props = FlockingParameters::new();
+        let force = separation_force(Vec2::ZERO, Vec2::ZERO, props.view_range);
         assert!(force.is_none());
     }
 
@@ -432,39 +499,53 @@ mod tests {
     // *********************
     #[test]
     fn check_separation_midpoint_x_positive() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.75, 0.0, 0.0))), // expected force
             separation_force(
-                Vec2::new(0.5 * BOID_VIEW_RANGE, 0.0), // boid position
-                Vec2::ZERO,                            // obstacle position
+                Vec2::new(0.5 * props.view_range, 0.0), // boid position
+                Vec2::ZERO,                             // obstacle position
+                props.view_range
             )
         );
     }
 
     #[test]
     fn check_separation_midpoint_x_negative() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(-0.75, 0.0, 0.0))), // expected force
             separation_force(
-                Vec2::new(-0.5 * BOID_VIEW_RANGE, 0.0), // boid position
-                Vec2::ZERO,                             // obstacle position
+                Vec2::new(-0.5 * props.view_range, 0.0), // boid position
+                Vec2::ZERO,                              // obstacle position
+                props.view_range
             )
         );
     }
 
     #[test]
     fn check_separation_edge_x_positive() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::ZERO)),
-            separation_force(Vec2::new(1.0 * BOID_VIEW_RANGE, 0.0), Vec2::ZERO,),
+            separation_force(
+                Vec2::new(1.0 * props.view_range, 0.0),
+                Vec2::ZERO,
+                props.view_range
+            ),
         );
     }
 
     #[test]
     fn check_separation_edge_x_negative() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::ZERO)),
-            separation_force(Vec2::new(-1.0 * BOID_VIEW_RANGE, 0.0), Vec2::ZERO,),
+            separation_force(
+                Vec2::new(-1.0 * props.view_range, 0.0),
+                Vec2::ZERO,
+                props.view_range
+            ),
         );
     }
 
@@ -473,33 +554,53 @@ mod tests {
     // *********************
     #[test]
     fn check_separation_midpoint_y_positive() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.0, 0.75, 0.0))),
-            separation_force(Vec2::new(0.0, 0.5 * BOID_VIEW_RANGE), Vec2::ZERO,)
+            separation_force(
+                Vec2::new(0.0, 0.5 * props.view_range),
+                Vec2::ZERO,
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_separation_midpoint_y_negative() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::new(0.0, -0.75, 0.0))),
-            separation_force(Vec2::new(0.0, -0.5 * BOID_VIEW_RANGE), Vec2::ZERO,)
+            separation_force(
+                Vec2::new(0.0, -0.5 * props.view_range),
+                Vec2::ZERO,
+                props.view_range
+            )
         );
     }
 
     #[test]
     fn check_separation_edge_y_positive() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::ZERO)),
-            separation_force(Vec2::new(0.0, 1.0 * BOID_VIEW_RANGE), Vec2::ZERO,)
+            separation_force(
+                Vec2::new(0.0, 1.0 * props.view_range),
+                Vec2::ZERO,
+                props.view_range
+            )
         )
     }
 
     #[test]
     fn check_separation_edge_y_negative() {
+        let props = FlockingParameters::new();
         assert_eq!(
             Some(Force(Vec3::ZERO)),
-            separation_force(Vec2::new(0.0, -1.0 * BOID_VIEW_RANGE), Vec2::ZERO,)
+            separation_force(
+                Vec2::new(0.0, -1.0 * props.view_range),
+                Vec2::ZERO,
+                props.view_range
+            )
         )
     }
 }
