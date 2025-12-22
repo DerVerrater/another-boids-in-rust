@@ -10,7 +10,7 @@ use bevy_inspector_egui::{
 use birdoids::BoidsPlugin;
 use debug_plugin::BoidsDebugPlugin;
 
-use crate::birdoids::FlockingParameters;
+use crate::birdoids::{FlockingParameters, MiscParams};
 
 fn main() {
     App::new()
@@ -26,5 +26,6 @@ fn main() {
         .add_plugins(BoidsPlugin)
         .add_plugins(EguiPlugin::default())
         .add_plugins(ResourceInspectorPlugin::<FlockingParameters>::new()) // TODO: monitor only the flocking params resource (once it exists)
+        .add_plugins(ResourceInspectorPlugin::<MiscParams>::new())
         .run();
 }

@@ -10,11 +10,6 @@ use bevy_inspector_egui::{InspectorOptions, prelude::ReflectInspectorOptions};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
 const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
-const TURN_FACTOR: f32 = 1.0;
-
-const SPACEBRAKES_COEFFICIENT: f32 = 0.5;
-const LOW_SPEED_THRESHOLD: f32 = 50.0;
-const HIGH_SPEED_THRESHOLD: f32 = 200.0;
 
 pub struct BoidsPlugin;
 
@@ -29,6 +24,8 @@ impl Plugin for BoidsPlugin {
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .insert_resource(FlockingParameters::new())
         .register_type::<FlockingParameters>()
+        .insert_resource(MiscParams::new())
+        .register_type::<MiscParams>()
         .add_systems(Startup, (spawn_camera, spawn_boids))
         .add_systems(
             FixedUpdate,
@@ -61,6 +58,26 @@ impl FlockingParameters {
             cohesion: 1.0,
             separation: 5.0,
             alignment: 2.0,
+        }
+    }
+}
+
+#[derive(InspectorOptions, Reflect, Resource, Debug, Clone, Copy)]
+#[reflect(Resource, InspectorOptions)]
+pub(crate) struct MiscParams {
+    turn_factor: f32,
+    spacebrakes: f32,
+    minimum_speed: f32,
+    maximum_speed: f32,
+}
+
+impl MiscParams {
+    pub(crate) fn new() -> Self {
+        Self {
+            turn_factor: 1.0,
+            spacebrakes: 0.5,
+            minimum_speed: 50.0,
+            maximum_speed: 200.0,
         }
     }
 }
@@ -110,12 +127,12 @@ fn spawn_boids(
 /// Controls the boid's minimum and maximum speed according to a low- and
 /// high-threshold. Boids moving too slow are sped up, and boids moving too
 /// fast are slowed down.
-fn speed_controller(mut mobs: Query<(&Velocity, &mut Force), With<Boid>>) {
+fn speed_controller(mut mobs: Query<(&Velocity, &mut Force), With<Boid>>, params: Res<MiscParams>) {
     for (vel, mut impulse) in &mut mobs {
-        if vel.0.length() < LOW_SPEED_THRESHOLD {
-            impulse.0 += vel.0 * SPACEBRAKES_COEFFICIENT;
-        } else if vel.0.length() > HIGH_SPEED_THRESHOLD {
-            impulse.0 += -vel.0 * SPACEBRAKES_COEFFICIENT;
+        if vel.0.length() < params.minimum_speed {
+            impulse.0 += vel.0 * params.spacebrakes;
+        } else if vel.0.length() > params.maximum_speed {
+            impulse.0 += -vel.0 * params.spacebrakes;
         }
     }
 }
@@ -123,21 +140,22 @@ fn speed_controller(mut mobs: Query<(&Velocity, &mut Force), With<Boid>>) {
 fn turn_if_edge(
     mut query: Query<(&mut Transform, &mut Velocity), With<Boid>>,
     window: Query<&Window>,
+    params: Res<MiscParams>,
 ) {
     if let Ok(window) = window.single() {
         let (width, height) = (window.resolution.width(), window.resolution.height());
         for (transform, mut velocity) in &mut query {
             let boid_pos = transform.translation.xy();
             if boid_pos.x <= -width / 2. + 50. {
-                velocity.x += TURN_FACTOR;
+                velocity.x += params.turn_factor;
             } else if boid_pos.x >= width / 2. - 50. {
-                velocity.x -= TURN_FACTOR;
+                velocity.x -= params.turn_factor;
             }
 
             if boid_pos.y <= -height / 2. + 50. {
-                velocity.y += TURN_FACTOR;
+                velocity.y += params.turn_factor;
             } else if boid_pos.y >= height / 2. - 50. {
-                velocity.y -= TURN_FACTOR;
+                velocity.y -= params.turn_factor;
             }
         }
     } else {
