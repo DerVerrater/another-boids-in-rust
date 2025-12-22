@@ -3,10 +3,7 @@ use bevy::prelude::*;
 mod birdoids;
 mod debug_plugin;
 
-use bevy_inspector_egui::{
-    bevy_egui::EguiPlugin,
-    quick::{ResourceInspectorPlugin},
-};
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::ResourceInspectorPlugin};
 use birdoids::BoidsPlugin;
 use debug_plugin::BoidsDebugPlugin;
 
