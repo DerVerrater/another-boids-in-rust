@@ -9,7 +9,6 @@ use crate::birdoids::physics::{Force, Velocity, apply_velocity};
 use bevy_inspector_egui::{InspectorOptions, prelude::ReflectInspectorOptions};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.4, 0.4, 0.4);
-const PLAYERBOID_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 
 pub struct BoidsPlugin;
 
@@ -32,7 +31,6 @@ impl Plugin for BoidsPlugin {
             (
                 apply_velocity,
                 turn_if_edge,
-                check_keyboard,
                 cohesion,
                 separation,
                 alignment,
@@ -86,11 +84,6 @@ impl MiscParams {
 #[require(Velocity, Force, TrackedByKdTree)]
 pub(crate) struct Boid;
 
-// It's a Boid, but with an extra component so the player
-// can control it from the keyboard
-#[derive(Component)]
-struct PlayerBoid;
-
 #[derive(Component, Default)]
 pub struct TrackedByKdTree;
 
@@ -115,13 +108,6 @@ fn spawn_boids(
             Transform::from_translation(vel * 20.0),
         ));
     }
-
-    commands.spawn((
-        Boid,
-        PlayerBoid,
-        Mesh2d(meshes.add(Triangle2d::default())),
-        MeshMaterial2d(materials.add(PLAYERBOID_COLOR)),
-    ));
 }
 
 /// Controls the boid's minimum and maximum speed according to a low- and
@@ -161,35 +147,6 @@ fn turn_if_edge(
     } else {
         panic!("System turn_if_edge(...) got an Err(_) when getting the window properties");
     }
-}
-
-fn check_keyboard(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
-    mut query: Query<&mut Force, With<PlayerBoid>>,
-) {
-    if keyboard_input.just_pressed(KeyCode::KeyQ) {
-        app_exit_events.send(bevy::app::AppExit::Success);
-    }
-
-    let mut impulse = query
-        .single_mut()
-        .expect("[birdoids_plugin::check_keyboard()] ->> There seems to be more than one player... How did that happen?");
-    let mut dir = Vec2::ZERO;
-    if keyboard_input.pressed(KeyCode::ArrowLeft) {
-        dir.x -= 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::ArrowRight) {
-        dir.x += 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::ArrowDown) {
-        dir.y -= 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::ArrowUp) {
-        dir.y += 1.0;
-    }
-
-    **impulse += dir.extend(0.0) * 50.0;
 }
 
 fn cohesion(
