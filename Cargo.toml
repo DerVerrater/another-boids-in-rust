@@ -3,6 +3,7 @@ name = "another-boids-in-rust"
 version = "0.7.0"
 edition = "2024"
 license = "AGPL-3.0-only"
+rust-version = "1.88.0"
 
 [dependencies]
 bevy = "0.16.0"
