@@ -20,16 +20,6 @@ bevy-inspector-egui = "0.32"
 # nonmax = "0.5.1"
 # rand = "0.8.0"
 
-# Use regular bevy_spatial on non-WASM builds
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy_spatial = "0.11.0"
-
-# Use bevy_spatial *without* the kdtree_rayon feature when building for WASM.
-[target.'cfg(target_arch = "wasm32")'.dependencies.bevy_spatial]
-version = "0.11.0"
-default-features = false
-features = ["kdtree"]
-
 [profile.dev]
 opt-level = 1
 
