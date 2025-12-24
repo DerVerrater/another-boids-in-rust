@@ -117,17 +117,13 @@ fn do_scan(
     match select_mode {
         SelectionMode::NearestSingle => todo!(),
         SelectionMode::CircularArea => {
-            let boids = spatial.shape_hits(
+            let boids = spatial.shape_intersections(
                 &Collider::circle(SCANRADIUS),
                 cursor_pos.translation.xy(),
                 0.0,
-                Dir2::Y,
-                64,
-                &ShapeCastConfig::from_max_distance(100.0),
                 &SpatialQueryFilter::default()
             ).into_iter()
-                .map(|shape_hit| {
-                    let entt = shape_hit.entity;
+                .map(|entt| {
                     let (tsfm, vel, _) = boids_query
                         .get(entt)
                         .expect("Debugger scanned a Boid missing one of it's components!");
