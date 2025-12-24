@@ -2,9 +2,6 @@ pub mod physics;
 
 use avian2d::prelude::*;
 use bevy::prelude::*;
-use bevy_spatial::{
-    AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode, kdtree::KDTree2,
-};
 
 use crate::birdoids::physics::{Force, Velocity, apply_velocity};
 use bevy_inspector_egui::{InspectorOptions, prelude::ReflectInspectorOptions};
@@ -15,29 +12,23 @@ pub struct BoidsPlugin;
 
 impl Plugin for BoidsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(
-            AutomaticUpdate::<TrackedByKdTree>::new()
-                // .with_frequency(Duration::from_secs_f32(0.3))
-                .with_transform(TransformMode::GlobalTransform)
-                .with_spatial_ds(SpatialStructure::KDTree2),
-        )
-        .insert_resource(ClearColor(BACKGROUND_COLOR))
-        .insert_resource(FlockingParameters::new())
-        .register_type::<FlockingParameters>()
-        .insert_resource(MiscParams::new())
-        .register_type::<MiscParams>()
-        .add_systems(Startup, (spawn_camera, spawn_boids))
-        .add_systems(
-            FixedUpdate,
-            (
-                apply_velocity,
-                turn_if_edge,
-                cohesion,
-                separation,
-                alignment,
-                speed_controller,
-            ),
-        );
+        app.insert_resource(ClearColor(BACKGROUND_COLOR))
+            .insert_resource(FlockingParameters::new())
+            .register_type::<FlockingParameters>()
+            .insert_resource(MiscParams::new())
+            .register_type::<MiscParams>()
+            .add_systems(Startup, (spawn_camera, spawn_boids))
+            .add_systems(
+                FixedUpdate,
+                (
+                    apply_velocity,
+                    turn_if_edge,
+                    cohesion,
+                    separation,
+                    alignment,
+                    speed_controller,
+                ),
+            );
     }
 }
 
@@ -82,11 +73,8 @@ impl MiscParams {
 }
 
 #[derive(Component)]
-#[require(Velocity, Force, TrackedByKdTree)]
+#[require(Velocity, Force)]
 pub(crate) struct Boid;
-
-#[derive(Component, Default)]
-pub struct TrackedByKdTree;
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -153,7 +141,9 @@ fn turn_if_edge(
 }
 
 fn cohesion(
-    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    spatial: SpatialQuery,
+    // TODO: Ensure this is logically sound. I think it will fail the "disjoint queries" requirement.
+    boid_locations: Query<&Transform, With<Boid>>,
     mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
     props: Res<FlockingParameters>,
 ) {
@@ -163,14 +153,23 @@ fn cohesion(
     // find vector from boid to flock CoM
     // apply force
     for (this_entt, transform, mut force) in &mut boids {
-        let (len, sum) = spatial_tree
-            .within_distance(transform.translation.xy(), props.view_range)
+        let (len, sum) = spatial
+            .shape_intersections(
+                &Collider::circle(props.view_range),
+                transform.translation.xy(),
+                0.0,
+                &SpatialQueryFilter::default(),
+            )
             .iter()
-            .filter_map(|(pos, entt)| {
+            .filter_map(|&entt| {
+                // extract neighbor's position
                 // Skip self-comparison. A boid should not try to separate from itself.
-                let entt = entt
-                    .expect("within_distance gave me an entity... with no entity ID... somehow");
-                if this_entt == entt { None } else { Some(pos) }
+                if this_entt == entt {
+                    None
+                } else {
+                    let tsfm = boid_locations.get(entt).unwrap();
+                    Some(tsfm.translation.xy())
+                }
             })
             .enumerate()
             .fold((0, Vec2::ZERO), |(_len, com), (idx, pos)| (idx, com + pos));
@@ -190,7 +189,8 @@ fn cohesion(
 }
 
 fn separation(
-    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    spatial: SpatialQuery,
+    boid_locations: Query<&Transform, With<Boid>>,
     mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
     props: Res<FlockingParameters>,
 ) {
@@ -199,16 +199,20 @@ fn separation(
     // sum force from neighbors
     // apply force
     for (this_entt, tsfm, mut force) in &mut boids {
-        let impulse = spatial_tree
-            .within_distance(tsfm.translation.xy(), props.view_range / 4.0)
+        let impulse = spatial
+            .shape_intersections(
+                &Collider::circle(props.view_range),
+                tsfm.translation.xy(),
+                0.0,
+                &SpatialQueryFilter::default(),
+            )
             .iter()
-            .filter_map(|(pos, entt)| {
+            .filter_map(|&entt| {
                 // Skip self-comparison. A boid should not try to separate from itself.
-                let entt = entt
-                    .expect("within_distance gave me an entity... with no entity ID... somehow");
                 if this_entt == entt {
                     None
                 } else {
+                    let pos = boid_locations.get(entt).unwrap().translation.xy();
                     Some(pos.extend(0.0))
                 }
             })
@@ -223,7 +227,7 @@ fn separation(
 }
 
 fn alignment(
-    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    spatial: SpatialQuery,
     mut boids: Query<(Entity, &Transform, &mut Force), With<Boid>>,
     boid_velocities: Query<&Velocity, With<Boid>>,
     props: Res<FlockingParameters>,
@@ -236,14 +240,16 @@ fn alignment(
     // apply steering force
 
     for (this_entt, transform, mut force) in &mut boids {
-        let neighbors = spatial_tree.within_distance(transform.translation.xy(), props.view_range);
+        let neighbors = spatial.shape_intersections(
+            &Collider::circle(props.view_range),
+            transform.translation.xy(),
+            0.0,
+            &SpatialQueryFilter::default(),
+        );
         // averaging divides by length. Guard against an empty set of neighbors
         let (len, sum) = neighbors
             .iter()
-            // Extract the velocities by `get()`ing from another query param.
-            .filter_map(|(_pos, maybe_entt)| {
-                let entt = maybe_entt
-                    .expect("Neighbor boid has no Entity ID. I don't know what this means");
+            .filter_map(|&entt| {
                 if this_entt == entt {
                     None
                 } else {
