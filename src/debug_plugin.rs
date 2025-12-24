@@ -117,19 +117,21 @@ fn do_scan(
     match select_mode {
         SelectionMode::NearestSingle => todo!(),
         SelectionMode::CircularArea => {
-            let boids = spatial.shape_intersections(
-                &Collider::circle(SCANRADIUS),
-                cursor_pos.translation.xy(),
-                0.0,
-                &SpatialQueryFilter::default()
-            ).into_iter()
+            let boids = spatial
+                .shape_intersections(
+                    &Collider::circle(SCANRADIUS),
+                    cursor_pos.translation.xy(),
+                    0.0,
+                    &SpatialQueryFilter::default(),
+                )
+                .into_iter()
                 .map(|entt| {
                     let (tsfm, vel, _) = boids_query
                         .get(entt)
                         .expect("Debugger scanned a Boid missing one of it's components!");
                     (tsfm, vel)
                 });
-            
+
             match scan_mode {
                 ScannerMode::CenterOfMass => {
                     if let Some(center_mass) = center_of_boids(
@@ -141,9 +143,9 @@ fn do_scan(
                     }
                 }
                 ScannerMode::Velocity => {
-                    if let Some(avg_velocity) = velocity_of_boids(boids.map(|item| {
-                        (*item.1).xy() * 1.0
-                    })) {
+                    if let Some(avg_velocity) =
+                        velocity_of_boids(boids.map(|item| (*item.1).xy() * 1.0))
+                    {
                         // cursor_pos.translation is already in world space, so I can skip the window -> world transform like in update_cursor()
                         gizmos.line_2d(
                             cursor_pos.translation.xy(),
