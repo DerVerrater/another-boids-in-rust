@@ -1,5 +1,6 @@
 pub mod physics;
 
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy_spatial::{
     AutomaticUpdate, SpatialAccess, SpatialStructure, TransformMode, kdtree::KDTree2,
@@ -106,6 +107,8 @@ fn spawn_boids(
             Mesh2d(meshes.add(Circle::new(1.0))),
             MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 1.0))),
             Transform::from_translation(vel * 20.0),
+            // RigidBody::Dynamic,
+            Collider::circle(1.0),
         ));
     }
 }

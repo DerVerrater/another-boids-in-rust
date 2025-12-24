@@ -1,8 +1,8 @@
+use avian2d::prelude::*;
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_spatial::{SpatialAccess, kdtree::KDTree2};
 
 use crate::birdoids::{
-    Boid, TrackedByKdTree, center_of_boids, physics::Force, physics::Velocity, velocity_of_boids,
+    Boid, center_of_boids, physics::Force, physics::Velocity, velocity_of_boids,
 };
 
 const SCANRADIUS: f32 = 50.0;
@@ -109,7 +109,7 @@ fn update_scanner_mode(
 fn do_scan(
     boids_query: Query<(&Transform, &Velocity, &Force), With<Boid>>,
     scanner_query: Query<(&Transform, &SelectionMode, &ScannerMode), With<Cursor>>,
-    spatial_tree: Res<KDTree2<TrackedByKdTree>>,
+    spatial: SpatialQuery,
     /* Push info to summary somewhere */
     mut gizmos: Gizmos,
 ) {
@@ -117,24 +117,36 @@ fn do_scan(
     match select_mode {
         SelectionMode::NearestSingle => todo!(),
         SelectionMode::CircularArea => {
-            let boids = spatial_tree.within_distance(cursor_pos.translation.xy(), SCANRADIUS);
+            let boids = spatial.shape_hits(
+                &Collider::circle(SCANRADIUS),
+                cursor_pos.translation.xy(),
+                0.0,
+                Dir2::Y,
+                64,
+                &ShapeCastConfig::from_max_distance(100.0),
+                &SpatialQueryFilter::default()
+            ).into_iter()
+                .map(|shape_hit| {
+                    let entt = shape_hit.entity;
+                    let (tsfm, vel, _) = boids_query
+                        .get(entt)
+                        .expect("Debugger scanned a Boid missing one of it's components!");
+                    (tsfm, vel)
+                });
+            
             match scan_mode {
                 ScannerMode::CenterOfMass => {
                     if let Some(center_mass) = center_of_boids(
-                        // boids returns too many things.
-                        // Map over it and extract only the Vec3's
-                        boids.iter().map(|item| item.0),
+                        // `center_of_boids` needs an Iterator<Item = Vec2>, so we map over
+                        // the output tuple to make one.
+                        boids.map(|item| item.0.translation.xy()),
                     ) {
                         gizmos.circle_2d(center_mass, 1.0, bevy::color::palettes::css::RED);
                     }
                 }
                 ScannerMode::Velocity => {
-                    if let Some(avg_velocity) = velocity_of_boids(boids.iter().map(|item| {
-                        let entity_id = item.1.unwrap_or_else(|| panic!("Entity has no ID!"));
-                        let (_, vel, _) = boids_query
-                            .get(entity_id)
-                            .unwrap_or_else(|_| panic!("Boid has no Velocity component!"));
-                        (*vel).xy() * 1.0
+                    if let Some(avg_velocity) = velocity_of_boids(boids.map(|item| {
+                        (*item.1).xy() * 1.0
                     })) {
                         // cursor_pos.translation is already in world space, so I can skip the window -> world transform like in update_cursor()
                         gizmos.line_2d(

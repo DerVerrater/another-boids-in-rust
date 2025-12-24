@@ -1,3 +1,4 @@
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
 mod birdoids;
@@ -24,5 +25,6 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(ResourceInspectorPlugin::<FlockingParameters>::new()) // TODO: monitor only the flocking params resource (once it exists)
         .add_plugins(ResourceInspectorPlugin::<MiscParams>::new())
+        .add_plugins(PhysicsPlugins::default())
         .run();
 }

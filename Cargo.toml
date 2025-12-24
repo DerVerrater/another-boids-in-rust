@@ -6,6 +6,7 @@ license = "AGPL-3.0-only"
 rust-version = "1.88.0"
 
 [dependencies]
+avian2d = "0.3"
 bevy = "0.16.0"
 bevy-inspector-egui = "0.32"
 
