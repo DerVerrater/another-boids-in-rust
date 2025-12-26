@@ -1,13 +1,18 @@
 # This script produces a web build. If you aren't trying to do that, it is
 # entirely useless to you.
 
-# Patch these to select a different build profile or target
-# The target shouldn't change any time soon. WASM64, I guess. Other targets
-# aren't aimed at the web, so you shouldn't be using this makefile.
+# # # Configuration Variables # # #
+# (because I don't have a ./configure script)
+#
+# Patch these to select a different build profile or target.
+# This Makefile will build a web bundle so using a non-wasm target is basically
+# nonsense. Maybe WASM64, but I don't think that's useful (or stabilized yet).
 CARGO_TARGET := wasm32-unknown-unknown
 CARGO_PROFILE := wasm-release
 
-# Override DESTDIR to set a custom install path (such as your web root)
+# Override DESTDIR to set a custom install path
+# E.g.: your web root
+# I use it via the Debian package build process (dpkg needs it)
 DESTDIR ?= .
 
 # # # Automatic Variables # # #
