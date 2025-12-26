@@ -6,9 +6,9 @@ license = "AGPL-3.0-only"
 rust-version = "1.88.0"
 
 [dependencies]
-avian2d = "0.3"
-bevy = "0.16.0"
-bevy-inspector-egui = "0.32"
+avian2d = "0.4"
+bevy = "0.17.0"
+bevy-inspector-egui = "0.34"
 
 # Grand-dependency pins
 # ab_glyph = "0.2.16"
