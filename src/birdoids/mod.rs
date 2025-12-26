@@ -201,7 +201,7 @@ fn separation(
     for (this_entt, tsfm, mut force) in &mut boids {
         let impulse = spatial
             .shape_intersections(
-                &Collider::circle(props.view_range),
+                &Collider::circle(props.view_range / 4.0),
                 tsfm.translation.xy(),
                 0.0,
                 &SpatialQueryFilter::default(),
