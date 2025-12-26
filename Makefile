@@ -10,8 +10,14 @@ CARGO_PROFILE := wasm-release
 # Override DESTDIR to set a custom install path (such as your web root)
 DESTDIR ?= .
 
+# # # Automatic Variables # # #
+# (meaning you shouldn't modify them yourself)
+#
+# These are for automatically finding information or files so that they can be
+# used somewhere in the build process.
 SRC_DIR = ./src
 SRCS := $(wildcard $(SRC_DIR)/**)
+CRATE_VERSION != sed -nre 's/^version = "(.*)"/\1/p' Cargo.toml
 
 .PHONY: clean full-clean install tarball tarball-standalone web web-standalone
 
@@ -48,11 +54,13 @@ out/boids.js out/boids_bg.wasm.gz &: target/$(CARGO_TARGET)/$(CARGO_PROFILE)/ano
 out/index.html: www/index.html
 	cp -a $< $@
 	rm -f out/boids.html
+	sed -i -e "s/#CRATE_VERSION_PLACEHOLDER#/$(CRATE_VERSION)/" $@
 
 # Like `out/index.html`, but renames it for use in a larger site.
 out/boids.html: www/index.html
 	cp -a $< $@
 	rm -f out/index.html
+	sed -i -e "s/#CRATE_VERSION_PLACEHOLDER#/$(CRATE_VERSION)/" $@
 
 # Clean the web build, but not the Cargo cache. Cargo handles it's own caching
 # and I don't want to obliterate it all the time.
