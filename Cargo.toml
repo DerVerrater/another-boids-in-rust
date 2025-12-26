@@ -10,16 +10,6 @@ avian2d = "0.4"
 bevy = "0.17.0"
 bevy-inspector-egui = "0.34"
 
-# Grand-dependency pins
-# ab_glyph = "0.2.16"
-# fnv = "1.0.6"
-# gilrs = "0.10.5"
-# lazy_static = "1.0.2"
-# lock_api = "0.4.7"
-# miniz-sys = "0.1.10"
-# nonmax = "0.5.1"
-# rand = "0.8.0"
-
 [profile.dev]
 opt-level = 1
 
